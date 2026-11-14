@@ -137,9 +137,17 @@ body{--metal:var(--line-bright);--glass:var(--blue-wash)}body::before{content:''
 <dialog id="compass-dialog" class="overlay compass-overlay" aria-labelledby="compass-title"><section class="compass-rose" id="compass-rose"><header class="compass-heading"><p class="eyebrow">✦ Navigate your library</p><h2 id="compass-title">The Compass</h2></header><button type="button" class="icon-button close-modal compass-close" aria-label="Close Compass">×</button><div class="compass-search searchbox"><span aria-hidden="true">⌕</span><label class="sr-only" for="compass-search">Search your archive</label><input id="compass-search" placeholder="A film, a year, a search… (try &gt;settings or :unwatched french films under 100 min)" autocomplete="off"></div><div id="compass-command-preview" class="filter-chips-preview" hidden></div><div class="compass-stats"><p class="eyebrow">Your search</p><strong id="compass-watched">0 / 0</strong><span>films watched</span><div class="progress-track"><span id="compass-progress-fill"></span></div><div class="compass-stat-pairs"><p><b id="compass-notes">0</b> chronicles</p><p><b id="compass-favorites">0</b> favorites</p><p><b id="compass-today">0</b> watched today</p></div></div><div class="rose-hub" aria-hidden="true">✦</div><div id="compass-genre-region" class="compass-genre-region" hidden><div id="genre-spokes" class="genre-spokes" role="group" aria-label="Genre spokes. Navigate with arrow keys."></div><div class="spoke-pagination"><button type="button" id="spoke-prev" class="icon-button" aria-label="Previous genres">‹</button><span id="spoke-page"></span><button type="button" id="spoke-next" class="icon-button" aria-label="Next genres">›</button></div><p id="spoke-description"></p></div><div id="compass-plain-actions" class="compass-plain-actions" hidden><button type="button" data-command="pick"><span>✦</span><strong>Tonight’s pick</strong><small>Find an unwatched film</small></button><button type="button" data-command="import"><span>❋</span><strong>Bring another list</strong><small>Import or paste titles</small></button><button type="button" data-command="export"><span>❧</span><strong>Keep a copy</strong><small>Export and backup</small></button></div><div class="compass-bottom"><div class="compass-filter-chips" role="group" aria-label="Compass filters"><button type="button" data-compass-filter="all">All films</button><button type="button" data-compass-filter="unwatched">Unwatched</button><button type="button" data-compass-filter="watched">Watched</button><button type="button" data-compass-filter="favorites">Favorites</button><button type="button" data-compass-filter="noted">With notes</button></div><p id="compass-feedback" class="quiet"></p><div class="compass-command-row"><button type="button" data-command="pick" class="text-button">Tonight’s pick</button><button type="button" data-command="import" class="text-button">Import list</button><button type="button" data-command="export" class="text-button">Export archive</button></div></div></section></dialog>
 
 <dialog id="settings-dialog" class="overlay" aria-labelledby="settings-title"><section class="modal-card settings-card"><header class="modal-header"><div><p class="eyebrow">Make the archive yours</p><h2 id="settings-title">Appearance &amp; artwork</h2></div><button type="button" class="icon-button close-modal" aria-label="Close settings">×</button></header><div class="modal-body"><div class="settings-section"><h3>Reading &amp; motion</h3><div class="form-grid"><label class="field-label">Text size<select id="setting-text" class="text-field"><option value="comfortable">Comfortable · 16 px</option><option value="large">Large · 18 px</option><option value="compact">Compact · 15 px</option></select></label><label class="field-label">Animation<select id="setting-motion" class="text-field"><option value="system">Follow system preference</option><option value="reduced">Reduce motion</option></select></label><label class="field-label">Rating display<select id="setting-rating-scale" class="text-field"><option value="5star">5-star (◆◇)</option><option value="10point">10-point</option><option value="thumbs">Thumbs up / down</option></select></label></div><p class="type-specimen">The films are yours. The story is still unfolding.</p></div><div class="settings-section"><h3>Poster artwork</h3><label class="inline-check"><input type="checkbox" id="setting-auto-posters" checked> Look up posters as they enter view</label><p class="quiet">Lookups send a film’s title and year to the selected service. Notes are never sent.</p><label class="field-label">Artwork service<select id="setting-provider" class="text-field"><option value="auto">Automatic · Wikipedia, then Apple Search; TMDB too with a token</option><option value="wikipedia">Wikipedia · no account needed</option><option value="tmdb">TMDB · read access token</option></select></label><div id="tmdb-token-fields" hidden><label class="field-label">TMDB API read access token<input id="setting-token" type="password" class="text-field" autocomplete="off" placeholder="Paste your token"></label><p class="quiet">The token stays in memory for this tab and is excluded from backups. <a href="https://www.themoviedb.org/settings/api" target="_blank" rel="noopener noreferrer">Get a TMDB token ↗</a></p></div><p class="quiet">Missing or mismatched artwork can be changed from any film’s chronicle.</p></div><div class="settings-section"><h3>Atmosphere &amp; preferences</h3><label class="field-label">Motion<select id="setting-effects" class="text-field"><option value="full">Full motion</option><option value="balanced">Balanced</option><option value="minimal">Minimal</option></select></label><label class="field-label">Preferred languages, comma separated<input id="preferred-languages" class="text-field" placeholder="Optional; used by Picks"></label><label class="field-label">Exclude these words from recommendations<input id="excluded-keywords" class="text-field" placeholder="Comma separated; optional"></label><label class="field-label">Viewing availability region<input id="watch-region" class="text-field" maxlength="2" placeholder="US"></label><button type="button" id="open-recovery" class="button ghost">Recovery checkpoints</button></div>
-<div class="settings-section"><h3>GitHub repo sync</h3><p class="quiet">Loads a <code>.md</code> file from a GitHub repo automatically on open, and writes every change back to it, so this collection stays identical across every device that opens this page. Uses the GitHub Contents API, which needs a <strong>repo</strong>-scoped token — not the Gist token, if you also use the separate Gist backup below.</p><div class="form-grid"><label class="field-label">Repo (owner/name)<input id="github-sync-repo" class="text-field" autocomplete="off" placeholder="yourname/movie-list"></label><label class="field-label">File path<input id="github-sync-path" class="text-field" autocomplete="off" placeholder="movies.md — blank finds the first .md file"></label><label class="field-label">Branch<input id="github-sync-branch" class="text-field" autocomplete="off" placeholder="blank = default branch"></label><label class="field-label">GitHub token (repo scope)<input id="github-sync-token" type="password" class="text-field" autocomplete="off" placeholder="Paste your token"></label></div><label class="inline-check"><input type="checkbox" id="github-sync-enabled"> Keep this on automatically — load on open, save on every change</label><p id="github-sync-status" class="quiet" role="status">Not configured.</p><div class="cloud-fetch-actions"><button type="button" id="github-sync-reload" class="button ghost">Reload from GitHub</button><button type="button" id="github-sync-pause" class="button subtle">Pause sync</button></div></div>
+<div class="settings-section"><h3>GitHub repo sync</h3><p class="quiet">Loads a <code>.md</code> file from a GitHub repo automatically on open, and writes every change back to it, so this collection stays identical across every device that opens this page. Uses the GitHub Contents API, which needs a <strong>repo</strong>-scoped token — not the Gist token, if you also use the separate Gist backup below.</p><div class="form-grid"><label class="field-label">Repo (owner/name)<input id="github-sync-repo" class="text-field" autocomplete="off" placeholder="yourname/movie-list"></label><label class="field-label">File path<input id="github-sync-path" class="text-field" autocomplete="off" placeholder="movies.md — blank finds the first .md file"></label><label class="field-label">Branch<input id="github-sync-branch" class="text-field" autocomplete="off" placeholder="blank = default branch"></label><label class="field-label">GitHub token (repo scope)<input id="github-sync-token" type="password" class="text-field" autocomplete="off" placeholder="Paste your token"></label></div><label class="inline-check"><input type="checkbox" id="github-sync-enabled"> Keep this on — auto-fetch from repo on every page load, save every change</label><p id="github-sync-status" class="quiet" role="status">Not configured.</p><div class="cloud-fetch-actions"><button type="button" id="github-sync-reload" class="button ghost">Reload from GitHub</button><button type="button" id="github-sync-pause" class="button subtle">Pause sync</button></div></div>
 <div class="settings-section"><h3>GitHub Gist sync</h3><p class="quiet">Stores this collection in a private GitHub Gist and keeps it in sync across every device that opens this page with the same token. Lighter to set up than the repo sync above: no repo to create first, and the token only needs the narrower <strong>gist</strong> scope. Running both at once is fine — they sync independent copies.</p><div class="form-grid"><label class="field-label">Gist ID (blank = create new on first save)<input id="github-gist-sync-id" class="text-field" autocomplete="off" placeholder="blank creates a new private gist"></label><label class="field-label">GitHub token (gist scope)<input id="github-gist-sync-token" type="password" class="text-field" autocomplete="off" placeholder="Paste your token"></label></div><label class="inline-check"><input type="checkbox" id="github-gist-sync-enabled"> Keep this on automatically — load on open, save on every change</label><p id="github-gist-sync-status" class="quiet" role="status">Not configured.</p><div class="cloud-fetch-actions"><button type="button" id="github-gist-sync-reload" class="button ghost">Reload from Gist</button><button type="button" id="github-gist-sync-pause" class="button subtle">Pause sync</button></div></div>
 
+<div class="settings-section" id="nr-firestore-settings-section">
+<h3>☁ Cloud sync (cross-device)</h3>
+<p class="quiet">Keeps your watched list, ratings, notes, and favorites in sync across every device automatically. Free via Firebase. <a href="https://console.firebase.google.com" target="_blank" rel="noopener noreferrer">Create a free project →</a></p>
+<p id="nr-firestore-status" class="quiet" style="margin:12px 0">Not configured.</p>
+<div style="display:flex;gap:12px;flex-wrap:wrap">
+  <button type="button" class="button ghost" id="nr-open-cloud-sync">Configure cloud sync →</button>
+</div>
+</div>
 <div class="settings-section"><h3>Your collection</h3><button type="button" id="settings-new-collection" class="button ghost">Import a new collection</button><button type="button" id="delete-collection" class="text-button danger-text">Delete current collection</button></div><p id="settings-status" class="form-status" role="status" hidden></p></div><footer class="modal-footer"><span class="quiet">Readable type. Room to breathe.</span><button type="button" id="save-settings" class="button primary">Save preferences</button></footer></section></dialog>
 
 <dialog id="export-dialog" class="overlay" aria-labelledby="export-title"><section class="modal-card export-card"><header class="modal-header"><div><p class="eyebrow">Keep the chronicle</p><h2 id="export-title">Export &amp; backup</h2></div><button type="button" class="icon-button close-modal" aria-label="Close export">×</button></header><div class="modal-body"><div class="export-options"><button type="button" id="export-json"><span>❧</span><strong>Complete backup</strong><small>All collections, notes, ratings, and custom posters. Restorable JSON.</small><b>↓ JSON</b></button><button type="button" id="export-markdown"><span>≡</span><strong>Markdown collection</strong><small>The current collection, including watch marks, ratings, and notes.</small><b>↓ MD</b></button><button type="button" id="export-text"><span>✦</span><strong>Simple movie list</strong><small>One title per line. Easy to share or use somewhere else.</small><b>↓ TXT</b></button><button type="button" id="export-csv"><span>▦</span><strong>Spreadsheet</strong><small>Title, year, genres, watched, rating, and notes as columns. Opens in Excel or Sheets.</small><b>↓ CSV</b></button></div><button type="button" id="copy-list" class="text-button" style="margin-top:12px">Copy movie list to clipboard</button><div class="restore-section"><h3>Restore an archive</h3><p>Restore an exported backup. This replaces the current archive; an undo remains available in this session.</p><label for="restore-file" class="button ghost">Choose a JSON backup</label><input type="file" id="restore-file" accept="application/json,.json" hidden></div><p id="export-status" class="form-status" role="status" hidden></p></div></section></dialog>
@@ -1732,7 +1740,7 @@ function persistArchive() {
   return ArchiveStorage.save(archiveApp.archive).then(() => {
     if (revision !== archiveApp.saveRevision) return;
     archiveApp.saveError = false;
-    archiveUi.saveIndicator.textContent = 'Saved in this browser';
+    archiveUi.saveIndicator.textContent = window.NightreelFirestore?.isSignedIn() ? 'Saved & syncing' : 'Saved in this browser';
     archiveUi.saveIndicator.classList.remove('is-error');
     pulse(archiveUi.saveIndicator);
     archiveUi.persistenceNotice.hidden = true;
@@ -3355,7 +3363,28 @@ function bindRealmEvents(){
   archiveUi.openScribe.addEventListener('click',openScribe);archiveUi.scribeFilter.addEventListener('change',()=>{realmState.scribeLimit=12;renderScribe();});archiveUi.scribeMore.addEventListener('click',()=>{realmState.scribeLimit+=12;renderScribe();});archiveUi.lookupScribe.addEventListener('click',()=>{void lookupMetadataBatch();});archiveUi.cancelScribe.addEventListener('click',()=>{realmState.scribeGeneration++;MetadataDesk.cancel();ArtworkLookup.cancel();archiveUi.lookupScribe.disabled=false;setFormStatus(archiveUi.scribeStatus,'Lookups stopped. Existing records are unchanged.');});archiveUi.scribeRows.addEventListener('click',event=>{const control=event.target.closest('button');if(!control)return;if(control.dataset.scribeOpen)openFilmFrom(archiveUi.scribeDialog,control.dataset.scribeOpen);if(control.dataset.lookupFilm){setFormStatus(archiveUi.scribeStatus,'Looking up verified records…');void lookupOneMetadata(control.dataset.lookupFilm).then(()=>setFormStatus(archiveUi.scribeStatus,'Review available matches below.'));}if(control.dataset.acceptMetadataFilm)acceptMetadata(control.dataset.acceptMetadataFilm,Number(control.dataset.acceptMetadataIndex));});
   archiveUi.openAssistant.addEventListener('click',()=>openAssistant());archiveUi.runLocalAssistant.addEventListener('click',renderLocalAssistant);archiveUi.runConnectedAi.addEventListener('click',()=>{void runConnectedAI();});archiveUi.cancelAi.addEventListener('click',()=>ArchiveAI.cancel());archiveUi.connectAi.addEventListener('click',()=>{void connectAI();});archiveUi.aiConnectionStatus.addEventListener('click',event=>{if(event.target.closest('[data-retry-connect-ai]'))void connectAI();});archiveUi.previewAiRequest.addEventListener('click',()=>{try{const payload=buildAIRequest();archiveUi.aiPayloadPreview.textContent=JSON.stringify(payload,null,2);archiveUi.aiPayloadPreview.hidden=false;}catch(error){setFormStatus(archiveUi.assistantStatus,error.message,true);}});archiveUi.applyAiFilters.addEventListener('click',()=>{if(realmState.assistantFilters){applyFilters(realmState.assistantFilters);closeOverlay(archiveUi.assistantDialog);}});archiveUi.assistantResults.addEventListener('click',event=>{const control=event.target.closest('button');if(!control)return;if(control.dataset.assistantOpen)openFilmFrom(archiveUi.assistantDialog,control.dataset.assistantOpen);if(control.dataset.assistantQueue)mutateFilms([control.dataset.assistantQueue],film=>{film.queue='tonight';},'Queued for tonight.');if(control.dataset.assistantScribe)closeOverlay(archiveUi.assistantDialog,openScribe);if(control.dataset.aiPatch){try{reviewAIPatch(JSON.parse(control.dataset.aiPatch));}catch(error){setFormStatus(archiveUi.assistantStatus,error.message,true);}}});
   archiveUi.openRecovery.addEventListener('click',()=>{void openRecovery();});archiveUi.saveCheckpoint.addEventListener('click',()=>{void ArchiveStorage.checkpoint(archiveApp.archive,'Manual recovery point').then(renderRecovery).catch(error=>setFormStatus(archiveUi.recoveryStatus,error.message,true));});archiveUi.checkpointList.addEventListener('click',event=>{const control=event.target.closest('[data-restore-checkpoint]');if(!control)return;void ArchiveStorage.checkpoints().then(checkpoints=>{const checkpoint=checkpoints.find(item=>item.key===control.dataset.restoreCheckpoint);if(!checkpoint)return;confirmAction('Restore this checkpoint?',`Return to ${formatDate(checkpoint.createdAt)}. You can undo this restore.`,()=>{pushHistory({kind:'archive',before:structuredClone(archiveApp.archive),label:'Restored checkpoint'});archiveApp.archive=LedgerCore.validateArchive(checkpoint.archive);ArchiveStorage.allowRestore();archiveApp.selected.clear();resetFilters();void persistArchive();renderArchive(true);showMessage('Checkpoint restored.',true);},'Restore checkpoint');}).catch(error=>setFormStatus(archiveUi.recoveryStatus,error.message,true));});
+  // Cloud sync button in settings
+  const nrCloudBtn = document.getElementById('nr-open-cloud-sync');
+  if(nrCloudBtn) nrCloudBtn.addEventListener('click', () => {
+    if(typeof window.NightreelFirestore !== 'undefined') window.NightreelFirestore.openDialog();
+  });
+  // Update Firestore status line when settings dialog opens
+  const origOpenSettings = window.openSettings;
+  if(origOpenSettings) window.openSettings = function() {
+    const r = origOpenSettings.apply(this, arguments);
+    setTimeout(() => {
+      const statusEl = document.getElementById('nr-firestore-status');
+      if(!statusEl) return;
+      const nrf = window.NightreelFirestore;
+      if(!nrf) { statusEl.textContent = 'Not configured.'; return; }
+      if(!nrf.isSignedIn()) { statusEl.textContent = 'Not signed in.'; return; }
+      const user = nrf.getUser();
+      statusEl.textContent = user ? `Signed in as ${user.email || user.displayName || 'unknown'}` : 'Not signed in.';
+    }, 50);
+    return r;
+  };
 }
+
 
 /**
  * After the bridge connects, check for .md/.txt files in its directory.
@@ -3413,6 +3442,11 @@ async function initializeKingdom(){await realmBase.initializeArchive();archiveAp
       bridgeConnected=true;
     }
     if(bridgeConnected) void autoImportAdjacentFiles();
+    // Auto-sync Cloud sources on startup (doesn't need bridge)
+    if(typeof Cloud !== 'undefined') {
+      const sources = Cloud.list().filter(s => !s.paused);
+      if(sources.length > 0) setTimeout(() => { for(const s of sources) void Cloud.sync(s.id,{manual:false}); }, 1500);
+    }
   }
 }
 void initializeKingdom().catch(error=>{archiveUi.persistenceNotice.textContent=`The archive could not finish loading: ${error.message}. Reload the file or restore a backup.`;archiveUi.persistenceNotice.hidden=false;});
@@ -5268,5 +5302,648 @@ void initializeKingdom().catch(error=>{archiveUi.persistenceNotice.textContent=`
   setTimeout(() => clearInterval(readiness), 30000);
 })();
 </script>
+
+<script>
+// ==================== NIGHTREEL CLOUD SYNC ====================
+// Firebase Auth + Firestore real-time cross-device sync
+// Free tier: 1GB storage, 50K reads/day, 20K writes/day
+// ============================================================
+
+(async () => {
+'use strict';
+
+// ---- Firebase config (Nightreel project) ----
+// Users set up their own Firebase project and paste config here,
+// or use the hosted demo project (rate-limited, for try-outs).
+// The config is public — security is enforced by Firestore rules.
+const FIREBASE_CONFIG_KEY = 'NIGHTREEL_FIREBASE_CONFIG_V1';
+
+function getFirebaseConfig() {
+  try {
+    const stored = JSON.parse(localStorage.getItem(FIREBASE_CONFIG_KEY) || 'null');
+    if (stored && stored.apiKey && stored.projectId) return stored;
+  } catch {}
+  return null;
+}
+
+function saveFirebaseConfig(cfg) {
+  try { localStorage.setItem(FIREBASE_CONFIG_KEY, JSON.stringify(cfg)); } catch {}
+}
+
+// ---- State ----
+const fb = {
+  app: null, auth: null, db: null,
+  user: null, unsubscribe: null,
+  syncing: false, lastError: '', lastSyncedAt: null,
+  remoteRevision: 0, localWriteRevision: 0, writeTimer: null,
+  initialized: false
+};
+
+// ---- DOM helpers ----
+function el(id) { return document.getElementById(id); }
+
+function setAuthUI(user) {
+  const btn = el('nr-auth-btn');
+  const info = el('nr-auth-info');
+  if (!btn) return;
+  if (user) {
+    btn.textContent = 'Sign out';
+    btn.title = user.email || user.displayName || 'Signed in';
+    if (info) {
+      info.textContent = user.displayName || user.email || 'Signed in';
+      info.hidden = false;
+    }
+  } else {
+    btn.textContent = 'Sign in';
+    btn.title = 'Sign in to sync across devices';
+    if (info) { info.textContent = ''; info.hidden = true; }
+  }
+}
+
+function setSyncBadge(state) {
+  const badge = el('nr-sync-badge');
+  if (!badge) return;
+  const labels = { idle: '', syncing: '⟳ Syncing', ok: '✓ Synced', error: '⚠ Sync error' };
+  badge.textContent = labels[state] || '';
+  badge.dataset.state = state;
+  badge.hidden = !labels[state];
+}
+
+// ---- Load Firebase dynamically ----
+async function loadFirebase() {
+  if (window.__firebaseLoaded) return true;
+  return new Promise(resolve => {
+    const sdkVersion = '10.12.2';
+    const base = `https://www.gstatic.com/firebasejs/${sdkVersion}`;
+    let loaded = 0;
+    const scripts = [
+      `${base}/firebase-app.js`,
+      `${base}/firebase-auth.js`,
+      `${base}/firebase-firestore.js`
+    ];
+    // Use the compat modular bundles via CDN
+    const moduleScript = document.createElement('script');
+    moduleScript.type = 'module';
+    moduleScript.textContent = `
+      import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+      import { getAuth, onAuthStateChanged, signInWithPopup, signInWithEmailAndPassword,
+               createUserWithEmailAndPassword, GoogleAuthProvider, signOut, updateProfile }
+        from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+      import { getFirestore, doc, setDoc, getDoc, onSnapshot, serverTimestamp }
+        from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+      window.__firebaseModules = { initializeApp, getAuth, onAuthStateChanged, signInWithPopup,
+        signInWithEmailAndPassword, createUserWithEmailAndPassword, GoogleAuthProvider,
+        signOut, updateProfile, getFirestore, doc, setDoc, getDoc, onSnapshot, serverTimestamp };
+      window.__firebaseLoaded = true;
+      window.dispatchEvent(new Event('firebase-ready'));
+    `;
+    document.head.appendChild(moduleScript);
+    // Fallback for browsers that block ES modules from gstatic
+    const timeout = setTimeout(() => {
+      if (!window.__firebaseLoaded) resolve(false);
+    }, 8000);
+    window.addEventListener('firebase-ready', () => {
+      clearTimeout(timeout);
+      resolve(true);
+    }, { once: true });
+  });
+}
+
+// ---- Initialize Firebase with user config ----
+async function initFirebase(config) {
+  if (!(await loadFirebase())) return false;
+  if (!window.__firebaseModules) return false;
+  const { initializeApp, getAuth, onAuthStateChanged, getFirestore } = window.__firebaseModules;
+  try {
+    fb.app = initializeApp(config, 'nightreel-' + config.projectId);
+    fb.auth = getAuth(fb.app);
+    fb.db = getFirestore(fb.app);
+    fb.initialized = true;
+    onAuthStateChanged(fb.auth, handleAuthChange);
+    return true;
+  } catch (e) {
+    fb.lastError = e.message;
+    return false;
+  }
+}
+
+// ---- Auth state change handler ----
+async function handleAuthChange(user) {
+  fb.user = user;
+  setAuthUI(user);
+  if (user) {
+    setSyncBadge('syncing');
+    subscribeToArchive(user.uid);
+    await pullFromFirestore(user.uid, true);
+    // Auto-fetch GitHub if configured in user prefs
+    autoFetchGitHubIfConfigured();
+  } else {
+    if (fb.unsubscribe) { fb.unsubscribe(); fb.unsubscribe = null; }
+    setSyncBadge('idle');
+  }
+  renderAuthDialog();
+}
+
+// ---- Firestore: subscribe to real-time updates ----
+function subscribeToArchive(uid) {
+  if (fb.unsubscribe) fb.unsubscribe();
+  const { doc, onSnapshot } = window.__firebaseModules;
+  fb.unsubscribe = onSnapshot(
+    doc(fb.db, 'users', uid, 'archive', 'main'),
+    snapshot => {
+      if (!snapshot.exists()) return;
+      const data = snapshot.data();
+      if (!data || !data.archive) return;
+      // Ignore if this came from our own write (compare revision token)
+      if (data.writeRevision === fb.localWriteRevision) return;
+      fb.remoteRevision = data.writeRevision || 0;
+      mergeRemoteArchive(data.archive);
+    },
+    err => {
+      fb.lastError = err.message;
+      setSyncBadge('error');
+    }
+  );
+}
+
+// ---- Merge remote archive into local state ----
+function mergeRemoteArchive(remoteArchive) {
+  if (!window.archiveApp || !realmState?.ready) return;
+  try {
+    const validated = typeof LedgerCore !== 'undefined'
+      ? LedgerCore.validateArchive ? LedgerCore.validateArchive(remoteArchive) : remoteArchive
+      : remoteArchive;
+    // Merge: remote collections win for new films, local wins for user data (notes, ratings)
+    for (const remoteCol of validated.collections || []) {
+      const localCol = archiveApp.archive.collections.find(c => c.id === remoteCol.id);
+      if (!localCol) {
+        archiveApp.archive.collections.push(remoteCol);
+      } else {
+        for (const remoteFilm of remoteCol.films) {
+          const localFilm = localCol.films.find(f => f.id === remoteFilm.id);
+          if (!localFilm) {
+            localCol.films.push(remoteFilm);
+          } else {
+            // Remote wins for watched/rating/favorite/note unless local is newer
+            const remoteTs = remoteFilm.updatedAt || remoteFilm.watchedAt || '';
+            const localTs = localFilm.updatedAt || localFilm.watchedAt || '';
+            if (remoteTs > localTs) {
+              Object.assign(localFilm, {
+                watched: remoteFilm.watched,
+                watchedAt: remoteFilm.watchedAt,
+                rating: remoteFilm.rating,
+                favorite: remoteFilm.favorite,
+                note: remoteFilm.note,
+                watchHistory: remoteFilm.watchHistory,
+                watchStatus: remoteFilm.watchStatus,
+                queue: remoteFilm.queue,
+              });
+            }
+          }
+        }
+      }
+    }
+    setSyncBadge('ok');
+    if (typeof renderArchive !== 'undefined') renderArchive(false);
+    if (typeof ArchiveStorage !== 'undefined') void ArchiveStorage.save(archiveApp.archive);
+    fb.lastSyncedAt = new Date().toISOString();
+  } catch (e) {
+    fb.lastError = e.message;
+    setSyncBadge('error');
+  }
+}
+
+// ---- Pull archive from Firestore (on login/init) ----
+async function pullFromFirestore(uid, announce = false) {
+  if (!fb.db) return;
+  const { doc, getDoc } = window.__firebaseModules;
+  setSyncBadge('syncing');
+  try {
+    const snap = await getDoc(doc(fb.db, 'users', uid, 'archive', 'main'));
+    if (snap.exists() && snap.data()?.archive) {
+      mergeRemoteArchive(snap.data().archive);
+      if (announce) showNightreelMessage('Synced from cloud ✓');
+    } else if (announce) {
+      // No cloud data yet — push local data up
+      await pushToFirestore();
+      showNightreelMessage('Archive saved to cloud ✓');
+    }
+    setSyncBadge('ok');
+  } catch (e) {
+    fb.lastError = e.message;
+    setSyncBadge('error');
+  }
+}
+
+// ---- Push archive to Firestore ----
+async function pushToFirestore() {
+  if (!fb.db || !fb.user) return;
+  const { doc, setDoc, serverTimestamp } = window.__firebaseModules;
+  fb.localWriteRevision = Date.now();
+  setSyncBadge('syncing');
+  try {
+    await setDoc(
+      doc(fb.db, 'users', fb.user.uid, 'archive', 'main'),
+      {
+        archive: archiveApp.archive,
+        writeRevision: fb.localWriteRevision,
+        updatedAt: serverTimestamp(),
+        userEmail: fb.user.email || '',
+      },
+      { merge: false }
+    );
+    setSyncBadge('ok');
+    fb.lastSyncedAt = new Date().toISOString();
+    fb.lastError = '';
+    updateSyncStatusLine();
+  } catch (e) {
+    fb.lastError = e.message;
+    setSyncBadge('error');
+  }
+}
+
+// ---- Scheduled push (debounced, 3s after last change) ----
+function schedulePushToFirestore() {
+  if (!fb.user || !fb.db) return;
+  clearTimeout(fb.writeTimer);
+  fb.writeTimer = setTimeout(() => void pushToFirestore(), 3000);
+}
+
+// ---- Auto-fetch GitHub on login ----
+function autoFetchGitHubIfConfigured() {
+  // Try GitHub repo sync
+  if (typeof GitHubRepoSync !== 'undefined' && GitHubRepoSync.configured() && !GitHubRepoSync.isPaused()) {
+    void githubSyncPullAndApply({ announce: false });
+    return;
+  }
+  // Try GitHub Gist sync
+  if (typeof GitHubGistSync !== 'undefined' && GitHubGistSync.configured() && !GitHubGistSync.isPaused()) {
+    void githubGistSyncPullAndApply(false);
+    return;
+  }
+  // Try Cloud sources
+  if (typeof Cloud !== 'undefined') {
+    const sources = Cloud.list();
+    if (sources.length > 0) {
+      for (const source of sources) {
+        if (!Cloud.isBusy(source.id)) void Cloud.sync(source.id, { manual: false });
+      }
+    }
+  }
+}
+
+// ---- Show a toast message ----
+function showNightreelMessage(msg) {
+  if (typeof showMessage === 'function') { showMessage(msg, false, 4000); return; }
+  const t = el('toast');
+  if (t) {
+    const copy = el('toast-copy');
+    if (copy) copy.textContent = msg;
+    t.hidden = false;
+    setTimeout(() => { t.hidden = true; }, 4000);
+  }
+}
+
+// ---- Update sync status in settings ----
+function updateSyncStatusLine() {
+  const line = el('nr-firestore-status');
+  if (!line) return;
+  if (!fb.initialized) { line.textContent = 'Not configured.'; return; }
+  if (!fb.user) { line.textContent = 'Signed out.'; return; }
+  if (fb.lastError) { line.textContent = `Error: ${fb.lastError}`; line.classList.add('is-error'); return; }
+  line.classList.remove('is-error');
+  line.textContent = fb.lastSyncedAt
+    ? `Synced ${new Date(fb.lastSyncedAt).toLocaleString()}`
+    : 'Signed in. Sync pending…';
+}
+
+// ---- Intercept persistArchive to also push to Firestore ----
+function hookPersistArchive() {
+  const originalPersist = window.persistArchive;
+  if (!originalPersist) return;
+  window.persistArchive = function() {
+    const result = originalPersist.apply(this, arguments);
+    schedulePushToFirestore();
+    return result;
+  };
+  // Also hook the realm override
+  if (typeof realmBase !== 'undefined' && realmBase.persistArchive) {
+    const origRealm = realmBase.persistArchive;
+    realmBase.persistArchive = function() {
+      const r = origRealm.apply(this, arguments);
+      schedulePushToFirestore();
+      return r;
+    };
+  }
+}
+
+// ---- Auth dialog ----
+function buildAuthDialog() {
+  if (el('nr-auth-dialog')) return;
+  const dialog = document.createElement('dialog');
+  dialog.id = 'nr-auth-dialog';
+  dialog.className = 'overlay';
+  dialog.setAttribute('aria-labelledby', 'nr-auth-title');
+  dialog.innerHTML = `
+  <section class="modal-card settings-card" style="max-width:520px">
+    <header class="modal-header">
+      <div>
+        <p class="eyebrow">☁ Cross-device sync</p>
+        <h2 id="nr-auth-title">Sign in to Nightreel</h2>
+      </div>
+      <button type="button" class="icon-button" id="nr-auth-close" aria-label="Close">×</button>
+    </header>
+    <div class="modal-body" id="nr-auth-body">
+      <div id="nr-auth-signedout">
+        <p class="quiet" style="margin-bottom:24px">Sign in to sync your watched list, ratings, and notes across all your devices. All your data is stored only in your account — no one else can see it.</p>
+        <button type="button" class="button primary large" id="nr-signin-google" style="width:100%;margin-bottom:12px;gap:12px">
+          <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#4285F4" d="M44.5 20H24v8.5h11.8C34.7 33.9 29.9 37 24 37c-7.2 0-13-5.8-13-13s5.8-13 13-13c3.1 0 5.9 1.1 8.1 2.9l6.4-6.4C34.6 4.1 29.6 2 24 2 11.8 2 2 11.8 2 24s9.8 22 22 22c11 0 21-8 21-22 0-1.3-.2-2.7-.5-4z"/><path fill="#34A853" d="M6.3 14.7l7 5.1C15 16.1 19.1 13 24 13c3.1 0 5.9 1.1 8.1 2.9l6.4-6.4C34.6 4.1 29.6 2 24 2 16.2 2 9.5 7.4 6.3 14.7z"/><path fill="#FBBC05" d="M24 46c5.8 0 10.8-1.9 14.6-5.2l-6.7-5.5C29.9 37 27.1 38 24 38c-5.8 0-10.8-3.9-11.9-9.2l-7 5.4C8.1 41.4 15.5 46 24 46z"/><path fill="#EA4335" d="M44.5 20H24v8.5h11.8c-1 3.3-3.3 6-6.3 7.8l6.7 5.5C40.3 38.3 45 32 45 24c0-1.3-.2-2.7-.5-4z"/></svg>
+          Continue with Google
+        </button>
+        <div style="display:flex;align-items:center;gap:12px;margin:16px 0;color:var(--muted);font-size:12px">
+          <span style="flex:1;border-bottom:1px solid var(--line)"></span>or<span style="flex:1;border-bottom:1px solid var(--line)"></span>
+        </div>
+        <label class="field-label">Email<input type="email" id="nr-email" class="text-field" autocomplete="email" placeholder="you@example.com"></label>
+        <label class="field-label">Password<input type="password" id="nr-password" class="text-field" autocomplete="current-password" placeholder="Your password"></label>
+        <div style="display:flex;gap:12px;margin-top:4px">
+          <button type="button" class="button primary" id="nr-signin-email" style="flex:1">Sign in</button>
+          <button type="button" class="button ghost" id="nr-signup-email" style="flex:1">Create account</button>
+        </div>
+        <p id="nr-auth-error" class="form-status is-error" style="margin-top:12px" hidden></p>
+      </div>
+      <div id="nr-auth-signedin" hidden>
+        <p id="nr-user-info" class="quiet" style="margin-bottom:24px"></p>
+        <div class="settings-section">
+          <h3>Firebase project (required)</h3>
+          <p class="quiet">Nightreel uses <a href="https://firebase.google.com" target="_blank" rel="noopener noreferrer">Firebase</a> for free cross-device sync. Paste your Firebase project config below — it's safe to include here.</p>
+          <label class="field-label" style="margin-top:16px">Firebase config JSON<textarea id="nr-firebase-config-input" class="text-field" rows="6" style="font-family:monospace;font-size:12px" placeholder='{"apiKey":"...","authDomain":"...","projectId":"..."}'></textarea></label>
+          <button type="button" class="button" id="nr-firebase-config-save" style="margin-top:8px">Save config and reconnect</button>
+          <p id="nr-firebase-config-status" class="form-status" style="margin-top:8px"></p>
+        </div>
+        <div style="margin-top:24px;border-top:1px solid var(--line);padding-top:24px;display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <strong style="font-size:15px" id="nr-signedout-name"></strong>
+            <p id="nr-sync-status-line" class="quiet" style="margin-top:4px"></p>
+          </div>
+          <button type="button" class="button ghost" id="nr-signout-btn">Sign out</button>
+        </div>
+        <button type="button" class="button primary" id="nr-force-sync" style="margin-top:16px;width:100%">⟳ Sync now</button>
+      </div>
+    </div>
+  </section>`;
+  document.body.appendChild(dialog);
+  bindAuthDialogEvents(dialog);
+}
+
+function renderAuthDialog() {
+  const signedOut = el('nr-auth-signedout');
+  const signedIn = el('nr-auth-signedin');
+  if (!signedOut || !signedIn) return;
+  if (fb.user) {
+    signedOut.hidden = true;
+    signedIn.hidden = false;
+    const nameEl = el('nr-signedout-name');
+    if (nameEl) nameEl.textContent = fb.user.displayName || fb.user.email || 'Signed in';
+    const info = el('nr-user-info');
+    if (info) info.textContent = `Signed in as ${fb.user.email || fb.user.displayName || 'unknown'}`;
+    const statusLine = el('nr-sync-status-line');
+    if (statusLine) statusLine.textContent = fb.lastSyncedAt
+      ? `Last synced ${new Date(fb.lastSyncedAt).toLocaleString()}`
+      : 'Ready to sync';
+    const configInput = el('nr-firebase-config-input');
+    if (configInput) {
+      const cfg = getFirebaseConfig();
+      if (cfg) configInput.value = JSON.stringify(cfg, null, 2);
+    }
+  } else {
+    signedOut.hidden = false;
+    signedIn.hidden = true;
+  }
+}
+
+function bindAuthDialogEvents(dialog) {
+  const close = () => { if (dialog.open) dialog.close(); };
+  el('nr-auth-close').addEventListener('click', close);
+  dialog.addEventListener('click', e => { if (e.target === dialog) close(); });
+
+  el('nr-signin-google').addEventListener('click', async () => {
+    if (!fb.auth) return showAuthError('Firebase not initialized. Paste a Firebase config first.');
+    clearAuthError();
+    setAuthBusy(true);
+    try {
+      const { signInWithPopup, GoogleAuthProvider } = window.__firebaseModules;
+      await signInWithPopup(fb.auth, new GoogleAuthProvider());
+      close();
+    } catch (e) {
+      showAuthError(e.code === 'auth/popup-closed-by-user' ? 'Sign-in cancelled.' : e.message);
+    } finally { setAuthBusy(false); }
+  });
+
+  el('nr-signin-email').addEventListener('click', async () => {
+    if (!fb.auth) return showAuthError('Firebase not initialized.');
+    const email = el('nr-email').value.trim();
+    const pw = el('nr-password').value;
+    if (!email || !pw) return showAuthError('Enter your email and password.');
+    clearAuthError(); setAuthBusy(true);
+    try {
+      const { signInWithEmailAndPassword } = window.__firebaseModules;
+      await signInWithEmailAndPassword(fb.auth, email, pw);
+      close();
+    } catch (e) { showAuthError(e.message); }
+    finally { setAuthBusy(false); }
+  });
+
+  el('nr-signup-email').addEventListener('click', async () => {
+    if (!fb.auth) return showAuthError('Firebase not initialized.');
+    const email = el('nr-email').value.trim();
+    const pw = el('nr-password').value;
+    if (!email || !pw) return showAuthError('Enter an email and password to create an account.');
+    if (pw.length < 6) return showAuthError('Password must be at least 6 characters.');
+    clearAuthError(); setAuthBusy(true);
+    try {
+      const { createUserWithEmailAndPassword } = window.__firebaseModules;
+      await createUserWithEmailAndPassword(fb.auth, email, pw);
+      close();
+    } catch (e) { showAuthError(e.message); }
+    finally { setAuthBusy(false); }
+  });
+
+  el('nr-signout-btn').addEventListener('click', async () => {
+    if (!fb.auth) return;
+    const { signOut } = window.__firebaseModules;
+    await signOut(fb.auth);
+    close();
+  });
+
+  el('nr-force-sync').addEventListener('click', async () => {
+    if (!fb.user) return;
+    await pushToFirestore();
+    updateSyncStatusLine();
+    renderAuthDialog();
+    showNightreelMessage('Synced ✓');
+  });
+
+  el('nr-firebase-config-save').addEventListener('click', async () => {
+    const input = el('nr-firebase-config-input').value.trim();
+    const status = el('nr-firebase-config-status');
+    try {
+      const cfg = JSON.parse(input);
+      if (!cfg.apiKey || !cfg.projectId) throw new Error('Config must include apiKey and projectId.');
+      saveFirebaseConfig(cfg);
+      status.textContent = 'Config saved. Reinitializing…';
+      status.classList.remove('is-error');
+      const ok = await initFirebase(cfg);
+      if (ok) {
+        status.textContent = 'Connected. Sign in to start syncing.';
+      } else {
+        status.textContent = 'Could not initialize Firebase with this config. Check the values.';
+        status.classList.add('is-error');
+      }
+    } catch (e) {
+      status.textContent = e.message;
+      status.classList.add('is-error');
+    }
+  });
+}
+
+function showAuthError(msg) {
+  const el2 = el('nr-auth-error');
+  if (el2) { el2.textContent = msg; el2.hidden = false; }
+}
+function clearAuthError() {
+  const el2 = el('nr-auth-error');
+  if (el2) { el2.textContent = ''; el2.hidden = true; }
+}
+function setAuthBusy(busy) {
+  for (const id of ['nr-signin-google','nr-signin-email','nr-signup-email']) {
+    const btn = el(id);
+    if (btn) btn.disabled = busy;
+  }
+}
+
+// ---- Inject topbar auth button ----
+function injectTopbarAuth() {
+  const actions = document.querySelector('.topbar-actions');
+  if (!actions || el('nr-auth-btn')) return;
+
+  const syncBadge = document.createElement('span');
+  syncBadge.id = 'nr-sync-badge';
+  syncBadge.hidden = true;
+  syncBadge.style.cssText = 'font-size:11px;color:var(--jade);letter-spacing:.05em;white-space:nowrap;align-self:center';
+
+  const authBtn = document.createElement('button');
+  authBtn.id = 'nr-auth-btn';
+  authBtn.type = 'button';
+  authBtn.className = 'button subtle';
+  authBtn.textContent = 'Sign in';
+  authBtn.title = 'Sign in to sync across devices';
+  authBtn.addEventListener('click', () => {
+    buildAuthDialog();
+    renderAuthDialog();
+    el('nr-auth-dialog').showModal();
+  });
+
+  const authInfo = document.createElement('span');
+  authInfo.id = 'nr-auth-info';
+  authInfo.hidden = true;
+  authInfo.style.cssText = 'font-size:11px;color:var(--secondary);white-space:nowrap;overflow:hidden;max-width:120px;text-overflow:ellipsis;align-self:center';
+
+  // Insert before "Import list" button
+  const importBtn = el('open-import');
+  if (importBtn) {
+    actions.insertBefore(syncBadge, importBtn);
+    actions.insertBefore(authInfo, importBtn);
+    actions.insertBefore(authBtn, importBtn);
+  } else {
+    actions.appendChild(syncBadge);
+    actions.appendChild(authInfo);
+    actions.appendChild(authBtn);
+  }
+}
+
+// ---- Inject sync status CSS ----
+function injectStyles() {
+  const style = document.createElement('style');
+  style.textContent = `
+    #nr-sync-badge { padding: 4px 10px; border: 1px solid var(--line); border-radius: var(--radius-pill); }
+    #nr-sync-badge[data-state="syncing"] { color: var(--blue); animation: breath 1.5s linear infinite; }
+    #nr-sync-badge[data-state="ok"] { color: var(--jade); }
+    #nr-sync-badge[data-state="error"] { color: var(--ruby); }
+    #nr-auth-info { padding: 4px 10px; border: 1px solid var(--line); border-radius: var(--radius-pill); }
+    @media (max-width: 639px) { #nr-auth-info { display: none !important; } }
+  `;
+  document.head.appendChild(style);
+}
+
+// ---- Auto-fetch fix: also run on init if GitHub is configured ----
+// This patches the auto-fetch race condition: even if initializeKingdom already ran
+// before Firebase was ready, we re-trigger GitHub fetch on first auth.
+// (The existing initializeKingdom already calls githubSyncPullAndApply if configured,
+//  but only for tokens saved from previous sessions. The Firestore path is additive.)
+
+// ---- Boot sequence ----
+async function boot() {
+  injectStyles();
+  injectTopbarAuth();
+
+  // Try to auto-init from saved config
+  const cfg = getFirebaseConfig();
+  if (cfg) {
+    const ok = await initFirebase(cfg);
+    if (!ok) console.warn('[Nightreel] Firebase init failed:', fb.lastError);
+  }
+
+  // Hook persistArchive once app is ready
+  const hookWhenReady = setInterval(() => {
+    if (typeof persistArchive === 'function' && typeof archiveApp !== 'undefined') {
+      clearInterval(hookWhenReady);
+      hookPersistArchive();
+    }
+  }, 500);
+  setTimeout(() => clearInterval(hookWhenReady), 20000);
+
+  // Expose for settings panel
+  window.NightreelFirestore = {
+    isSignedIn: () => !!fb.user,
+    getUser: () => fb.user,
+    pushNow: pushToFirestore,
+    pullNow: () => fb.user ? pullFromFirestore(fb.user.uid, true) : Promise.resolve(),
+    init: initFirebase,
+    openDialog: () => {
+      buildAuthDialog();
+      renderAuthDialog();
+      el('nr-auth-dialog').showModal();
+    }
+  };
+}
+
+// Issue 1 fix: also patch initializeKingdom to trigger GitHub fetch even
+// if the config was just restored from Firestore user prefs.
+// We use a MutationObserver or a simple poll to catch the ready state.
+function ensureGitHubAutoFetch() {
+  const check = setInterval(() => {
+    if (typeof realmState !== 'undefined' && realmState.ready) {
+      clearInterval(check);
+      // If GitHub is configured but not yet synced this session, do it now.
+      const ghStatus = typeof GitHubRepoSync !== 'undefined' ? GitHubRepoSync.status() : null;
+      if (ghStatus && ghStatus.state === 'idle' && !ghStatus.lastSyncedAt) {
+        if (typeof GitHubRepoSync !== 'undefined' && GitHubRepoSync.configured() && !GitHubRepoSync.isPaused()) {
+          void githubSyncPullAndApply({ announce: false });
+        }
+        if (typeof GitHubGistSync !== 'undefined' && GitHubGistSync.configured() && !GitHubGistSync.isPaused()) {
+          void githubGistSyncPullAndApply(false);
+        }
+      }
+    }
+  }, 300);
+  setTimeout(() => clearInterval(check), 30000);
+}
+
+boot();
+ensureGitHubAutoFetch();
+
+})();
+</script>
+
 </body>
 </html>
