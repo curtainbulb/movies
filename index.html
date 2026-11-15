@@ -2998,7 +2998,7 @@ async function initializeArchive() {
 const realmState={queueTab:'tonight',councilChoices:[],path:[],scribeLimit:12,scribeGeneration:0,metadata:new Map(),assistantFilters:null,aiController:null,checkpointWrites:0,selectedProfiles:new Set(),ready:false,aiRevision:0};
 const realmBase={renderArchive,renderFilms,paintChronicle,flushChronicle,persistArchive,persistView,resetFilters,saveFilmDetails,saveSettings,openSettings,initializeArchive,createPosterCard,toggleWatched,mutateFilms};
 
-mutateFilms=(ids,update,label,options={})=>realmBase.mutateFilms(ids,film=>{const watched=film.watched;const beforeCount=film.watchHistory.length;update(film);if(!watched&&film.watched){if(film.watchHistory.length===beforeCount)film.watchHistory.push({id:LedgerCore.newId('viewing'),date:film.watchedAt||new Date().toISOString(),completed:true,minutes:film.runtime,edition:'',companions:'',note:''});film.watchStatus='watched';film.queue='none';}else if(watched&&!film.watched){film.watchHistory=[];film.watchStatus='unwatched';}},label,options);
+mutateFilms=(ids,update,label,options={})=>realmBase.mutateFilms(ids,film=>{const watched=film.watched;const beforeCount=film.watchHistory.length;update(film);film.updatedAt=new Date().toISOString();if(!watched&&film.watched){if(film.watchHistory.length===beforeCount)film.watchHistory.push({id:LedgerCore.newId('viewing'),date:film.watchedAt||new Date().toISOString(),completed:true,minutes:film.runtime,edition:'',companions:'',note:''});film.watchStatus='watched';film.queue='none';}else if(watched&&!film.watched){film.watchHistory=[];film.watchStatus='unwatched';}},label,options);
 
 function requireCollection(){const collection=activeCollection();if(!collection){showMessage('Import a movie list first.');return null;}return collection;}
 function commaValues(text){return[...new Set(String(text).split(',').map(value=>value.trim()).filter(Boolean))];}
@@ -5347,8 +5347,8 @@ function setAuthUI(user) {
   const info = el('nr-auth-info');
   if (!btn) return;
   if (user) {
-    btn.textContent = 'Sign out';
-    btn.title = user.email || user.displayName || 'Signed in';
+    btn.textContent = '☁ ' + (user.displayName?.split(' ')[0] || user.email?.split('@')[0] || 'Synced');
+    btn.title = `Signed in as ${user.email || user.displayName} · click to manage`;
     if (info) {
       info.textContent = user.displayName || user.email || 'Signed in';
       info.hidden = false;
@@ -5372,41 +5372,62 @@ function setSyncBadge(state) {
 // ---- Load Firebase dynamically ----
 async function loadFirebase() {
   if (window.__firebaseLoaded) return true;
-  return new Promise(resolve => {
-    const sdkVersion = '10.12.2';
-    const base = `https://www.gstatic.com/firebasejs/${sdkVersion}`;
-    let loaded = 0;
-    const scripts = [
-      `${base}/firebase-app.js`,
-      `${base}/firebase-auth.js`,
-      `${base}/firebase-firestore.js`
-    ];
-    // Use the compat modular bundles via CDN
-    const moduleScript = document.createElement('script');
-    moduleScript.type = 'module';
-    moduleScript.textContent = `
-      import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
-      import { getAuth, onAuthStateChanged, signInWithPopup, signInWithEmailAndPassword,
-               createUserWithEmailAndPassword, GoogleAuthProvider, signOut, updateProfile }
-        from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-      import { getFirestore, doc, setDoc, getDoc, onSnapshot, serverTimestamp }
-        from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
-      window.__firebaseModules = { initializeApp, getAuth, onAuthStateChanged, signInWithPopup,
-        signInWithEmailAndPassword, createUserWithEmailAndPassword, GoogleAuthProvider,
-        signOut, updateProfile, getFirestore, doc, setDoc, getDoc, onSnapshot, serverTimestamp };
-      window.__firebaseLoaded = true;
-      window.dispatchEvent(new Event('firebase-ready'));
-    `;
-    document.head.appendChild(moduleScript);
-    // Fallback for browsers that block ES modules from gstatic
-    const timeout = setTimeout(() => {
-      if (!window.__firebaseLoaded) resolve(false);
-    }, 8000);
-    window.addEventListener('firebase-ready', () => {
-      clearTimeout(timeout);
-      resolve(true);
-    }, { once: true });
-  });
+  // Use Firebase 9 compat bundles — plain <script> tags, no ES module system,
+  // works from any origin including file://.
+  const sdkVersion = '9.23.0';
+  const base = `https://www.gstatic.com/firebasejs/${sdkVersion}`;
+  const urls = [
+    `${base}/firebase-app-compat.js`,
+    `${base}/firebase-auth-compat.js`,
+    `${base}/firebase-firestore-compat.js`,
+  ];
+  function loadScript(src) {
+    return new Promise((res, rej) => {
+      if (document.querySelector(`script[src="${src}"]`)) { res(); return; }
+      const s = document.createElement('script');
+      s.src = src; s.async = false;
+      s.onload = res;
+      s.onerror = () => rej(new Error(`Failed to load ${src}`));
+      document.head.appendChild(s);
+    });
+  }
+  try {
+    for (const url of urls) await loadScript(url);
+    // Compat layer exposes window.firebase global
+    if (!window.firebase) throw new Error('firebase global not found after SDK load');
+    // Map to the same __firebaseModules interface so the rest of the code is unchanged
+    window.__firebaseModules = {
+      initializeApp: (cfg, name) => window.firebase.initializeApp(cfg, name),
+      getAuth: app => app.auth(),
+      onAuthStateChanged: (auth, cb) => auth.onAuthStateChanged(cb),
+      signInWithPopup: (auth, provider) => auth.signInWithPopup(provider),
+      signInWithEmailAndPassword: (auth, e, p) => auth.signInWithEmailAndPassword(e, p),
+      createUserWithEmailAndPassword: (auth, e, p) => auth.createUserWithEmailAndPassword(e, p),
+      GoogleAuthProvider: window.firebase.auth.GoogleAuthProvider,
+      signOut: auth => auth.signOut(),
+      updateProfile: (user, profile) => user.updateProfile(profile),
+      getFirestore: app => app.firestore(),
+      doc: (db, ...pathSegs) => {
+        // Compat: db.collection('a').doc('b').collection('c').doc('d')
+        const parts = pathSegs.join('/').split('/').filter(Boolean);
+        if (parts.length % 2 !== 0) throw new Error('Firestore path must have even segments');
+        let ref = db;
+        for (let i = 0; i < parts.length; i += 2) {
+          ref = ref.collection(parts[i]).doc(parts[i+1]);
+        }
+        return ref;
+      },
+      setDoc: (ref, data, opts) => opts?.merge ? ref.set(data, opts) : ref.set(data),
+      getDoc: ref => ref.get(),
+      onSnapshot: (ref, cb, errCb) => ref.onSnapshot(cb, errCb),
+      serverTimestamp: () => window.firebase.firestore.FieldValue.serverTimestamp(),
+    };
+    window.__firebaseLoaded = true;
+    return true;
+  } catch (e) {
+    console.warn('[Nightreel] Firebase SDK load failed:', e.message);
+    return false;
+  }
 }
 
 // ---- Initialize Firebase with user config ----
@@ -5415,6 +5436,11 @@ async function initFirebase(config) {
   if (!window.__firebaseModules) return false;
   const { initializeApp, getAuth, onAuthStateChanged, getFirestore } = window.__firebaseModules;
   try {
+    // Delete existing app with same name to allow reinit
+    try {
+      const existing = window.firebase?.apps?.find(a => a.name === 'nightreel-' + config.projectId);
+      if (existing) await existing.delete();
+    } catch {}
     fb.app = initializeApp(config, 'nightreel-' + config.projectId);
     fb.auth = getAuth(fb.app);
     fb.db = getFirestore(fb.app);
@@ -5423,6 +5449,7 @@ async function initFirebase(config) {
     return true;
   } catch (e) {
     fb.lastError = e.message;
+    console.warn('[Nightreel] Firebase init error:', e.message);
     return false;
   }
 }
@@ -5451,7 +5478,7 @@ function subscribeToArchive(uid) {
   fb.unsubscribe = onSnapshot(
     doc(fb.db, 'users', uid, 'archive', 'main'),
     snapshot => {
-      if (!snapshot.exists()) return;
+      if (!snapshot.exists) return;
       const data = snapshot.data();
       if (!data || !data.archive) return;
       // Ignore if this came from our own write (compare revision token)
@@ -5485,8 +5512,8 @@ function mergeRemoteArchive(remoteArchive) {
             localCol.films.push(remoteFilm);
           } else {
             // Remote wins for watched/rating/favorite/note unless local is newer
-            const remoteTs = remoteFilm.updatedAt || remoteFilm.watchedAt || '';
-            const localTs = localFilm.updatedAt || localFilm.watchedAt || '';
+            const remoteTs = remoteFilm.updatedAt || remoteFilm.watchedAt || '1970';
+            const localTs = localFilm.updatedAt || localFilm.watchedAt || '1970';
             if (remoteTs > localTs) {
               Object.assign(localFilm, {
                 watched: remoteFilm.watched,
@@ -5502,6 +5529,14 @@ function mergeRemoteArchive(remoteArchive) {
           }
         }
       }
+    }
+    // Sync top-level settings and activeId from remote if newer
+    if (validated.settings) {
+      // Merge settings non-destructively: remote wins for display/provider prefs
+      Object.assign(archiveApp.archive.settings, validated.settings);
+    }
+    if (validated.activeId && archiveApp.archive.collections.some(c => c.id === validated.activeId)) {
+      archiveApp.archive.activeId = validated.activeId;
     }
     setSyncBadge('ok');
     if (typeof renderArchive !== 'undefined') renderArchive(false);
@@ -5520,7 +5555,7 @@ async function pullFromFirestore(uid, announce = false) {
   setSyncBadge('syncing');
   try {
     const snap = await getDoc(doc(fb.db, 'users', uid, 'archive', 'main'));
-    if (snap.exists() && snap.data()?.archive) {
+    if (snap.exists && snap.data()?.archive) {
       mergeRemoteArchive(snap.data().archive);
       if (announce) showNightreelMessage('Synced from cloud ✓');
     } else if (announce) {
@@ -5675,7 +5710,7 @@ function buildAuthDialog() {
         <p id="nr-user-info" class="quiet" style="margin-bottom:24px"></p>
         <div class="settings-section">
           <h3>Firebase project (required)</h3>
-          <p class="quiet">Nightreel uses <a href="https://firebase.google.com" target="_blank" rel="noopener noreferrer">Firebase</a> for free cross-device sync. Paste your Firebase project config below — it's safe to include here.</p>
+          <p class="quiet">Nightreel uses <a href="https://firebase.google.com" target="_blank" rel="noopener noreferrer">Firebase</a> for free cross-device sync. Paste your Firebase project config below. In your Firebase console, also set Firestore rules to: <code style="font-size:11px">allow read, write: if request.auth.uid == uid</code> under <code style="font-size:11px">/users/{uid}/{document=**}</code>.</p>
           <label class="field-label" style="margin-top:16px">Firebase config JSON<textarea id="nr-firebase-config-input" class="text-field" rows="6" style="font-family:monospace;font-size:12px" placeholder='{"apiKey":"...","authDomain":"...","projectId":"..."}'></textarea></label>
           <button type="button" class="button" id="nr-firebase-config-save" style="margin-top:8px">Save config and reconnect</button>
           <p id="nr-firebase-config-status" class="form-status" style="margin-top:8px"></p>
@@ -5835,8 +5870,8 @@ function injectTopbarAuth() {
   authBtn.id = 'nr-auth-btn';
   authBtn.type = 'button';
   authBtn.className = 'button subtle';
-  authBtn.textContent = 'Sign in';
-  authBtn.title = 'Sign in to sync across devices';
+  authBtn.textContent = '☁ Sync';
+  authBtn.title = 'Sign in for cross-device sync (optional)';
   authBtn.addEventListener('click', () => {
     buildAuthDialog();
     renderAuthDialog();
