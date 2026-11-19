@@ -90,7 +90,7 @@ body{--metal:var(--line-bright);--glass:var(--blue-wash)}body::before{content:''
 <header class="topbar">
   <a href="#" class="wordmark" id="home-link" aria-label="Nightreel home"><span class="brand-sigil" aria-hidden="true">✦</span><span>Nightreel<small>A personal cinema archive</small></span></a>
   <div class="topbar-actions">
-    <button class="button subtle" id="open-settings" type="button"><span aria-hidden="true">☷</span><span class="desktop-label">Appearance &amp; artwork</span></button>
+    <button class="button subtle" id="open-settings" type="button"><span aria-hidden="true">☷</span><span class="desktop-label">Settings &amp; sync</span></button>
     <button class="button subtle" id="open-studio" type="button" title="Suggestions, library health, cloud sources, AI models (Alt+Shift+I)"><span aria-hidden="true">✦</span><span class="desktop-label">Studio</span></button>
     <button class="button primary" id="open-import" type="button"><span aria-hidden="true">＋</span> Import list</button>
   </div>
@@ -136,19 +136,24 @@ body{--metal:var(--line-bright);--glass:var(--blue-wash)}body::before{content:''
 
 <dialog id="compass-dialog" class="overlay compass-overlay" aria-labelledby="compass-title"><section class="compass-rose" id="compass-rose"><header class="compass-heading"><p class="eyebrow">✦ Navigate your library</p><h2 id="compass-title">The Compass</h2></header><button type="button" class="icon-button close-modal compass-close" aria-label="Close Compass">×</button><div class="compass-search searchbox"><span aria-hidden="true">⌕</span><label class="sr-only" for="compass-search">Search your archive</label><input id="compass-search" placeholder="A film, a year, a search… (try &gt;settings or :unwatched french films under 100 min)" autocomplete="off"></div><div id="compass-command-preview" class="filter-chips-preview" hidden></div><div class="compass-stats"><p class="eyebrow">Your search</p><strong id="compass-watched">0 / 0</strong><span>films watched</span><div class="progress-track"><span id="compass-progress-fill"></span></div><div class="compass-stat-pairs"><p><b id="compass-notes">0</b> chronicles</p><p><b id="compass-favorites">0</b> favorites</p><p><b id="compass-today">0</b> watched today</p></div></div><div class="rose-hub" aria-hidden="true">✦</div><div id="compass-genre-region" class="compass-genre-region" hidden><div id="genre-spokes" class="genre-spokes" role="group" aria-label="Genre spokes. Navigate with arrow keys."></div><div class="spoke-pagination"><button type="button" id="spoke-prev" class="icon-button" aria-label="Previous genres">‹</button><span id="spoke-page"></span><button type="button" id="spoke-next" class="icon-button" aria-label="Next genres">›</button></div><p id="spoke-description"></p></div><div id="compass-plain-actions" class="compass-plain-actions" hidden><button type="button" data-command="pick"><span>✦</span><strong>Tonight’s pick</strong><small>Find an unwatched film</small></button><button type="button" data-command="import"><span>❋</span><strong>Bring another list</strong><small>Import or paste titles</small></button><button type="button" data-command="export"><span>❧</span><strong>Keep a copy</strong><small>Export and backup</small></button></div><div class="compass-bottom"><div class="compass-filter-chips" role="group" aria-label="Compass filters"><button type="button" data-compass-filter="all">All films</button><button type="button" data-compass-filter="unwatched">Unwatched</button><button type="button" data-compass-filter="watched">Watched</button><button type="button" data-compass-filter="favorites">Favorites</button><button type="button" data-compass-filter="noted">With notes</button></div><p id="compass-feedback" class="quiet"></p><div class="compass-command-row"><button type="button" data-command="pick" class="text-button">Tonight’s pick</button><button type="button" data-command="import" class="text-button">Import list</button><button type="button" data-command="export" class="text-button">Export archive</button></div></div></section></dialog>
 
-<dialog id="settings-dialog" class="overlay" aria-labelledby="settings-title"><section class="modal-card settings-card"><header class="modal-header"><div><p class="eyebrow">Make the archive yours</p><h2 id="settings-title">Appearance &amp; artwork</h2></div><button type="button" class="icon-button close-modal" aria-label="Close settings">×</button></header><div class="modal-body"><div class="settings-section"><h3>Reading &amp; motion</h3><div class="form-grid"><label class="field-label">Text size<select id="setting-text" class="text-field"><option value="comfortable">Comfortable · 16 px</option><option value="large">Large · 18 px</option><option value="compact">Compact · 15 px</option></select></label><label class="field-label">Animation<select id="setting-motion" class="text-field"><option value="system">Follow system preference</option><option value="reduced">Reduce motion</option></select></label><label class="field-label">Rating display<select id="setting-rating-scale" class="text-field"><option value="5star">5-star (◆◇)</option><option value="10point">10-point</option><option value="thumbs">Thumbs up / down</option></select></label></div><p class="type-specimen">The films are yours. The story is still unfolding.</p></div><div class="settings-section"><h3>Poster artwork</h3><label class="inline-check"><input type="checkbox" id="setting-auto-posters" checked> Look up posters as they enter view</label><p class="quiet">Lookups send a film’s title and year to the selected service. Notes are never sent.</p><label class="field-label">Artwork service<select id="setting-provider" class="text-field"><option value="auto">Automatic · Wikipedia, then Apple Search; TMDB too with a token</option><option value="wikipedia">Wikipedia · no account needed</option><option value="tmdb">TMDB · read access token</option></select></label><div id="tmdb-token-fields" hidden><label class="field-label">TMDB API read access token<input id="setting-token" type="password" class="text-field" autocomplete="off" placeholder="Paste your token"></label><p class="quiet">The token stays in memory for this tab and is excluded from backups. <a href="https://www.themoviedb.org/settings/api" target="_blank" rel="noopener noreferrer">Get a TMDB token ↗</a></p></div><p class="quiet">Missing or mismatched artwork can be changed from any film’s chronicle.</p></div><div class="settings-section"><h3>Atmosphere &amp; preferences</h3><label class="field-label">Motion<select id="setting-effects" class="text-field"><option value="full">Full motion</option><option value="balanced">Balanced</option><option value="minimal">Minimal</option></select></label><label class="field-label">Preferred languages, comma separated<input id="preferred-languages" class="text-field" placeholder="Optional; used by Picks"></label><label class="field-label">Exclude these words from recommendations<input id="excluded-keywords" class="text-field" placeholder="Comma separated; optional"></label><label class="field-label">Viewing availability region<input id="watch-region" class="text-field" maxlength="2" placeholder="US"></label><button type="button" id="open-recovery" class="button ghost">Recovery checkpoints</button></div>
-<div class="settings-section"><h3>GitHub repo sync</h3><p class="quiet">Loads a <code>.md</code> file from a GitHub repo automatically on open, and writes every change back to it, so this collection stays identical across every device that opens this page. Uses the GitHub Contents API, which needs a <strong>repo</strong>-scoped token — not the Gist token, if you also use the separate Gist backup below.</p><div class="form-grid"><label class="field-label">Repo (owner/name)<input id="github-sync-repo" class="text-field" autocomplete="off" placeholder="yourname/movie-list"></label><label class="field-label">File path<input id="github-sync-path" class="text-field" autocomplete="off" placeholder="movies.md — blank finds the first .md file"></label><label class="field-label">Branch<input id="github-sync-branch" class="text-field" autocomplete="off" placeholder="blank = default branch"></label><label class="field-label">GitHub token (repo scope)<input id="github-sync-token" type="password" class="text-field" autocomplete="off" placeholder="Paste your token"></label></div><label class="inline-check"><input type="checkbox" id="github-sync-enabled"> Keep this on — auto-fetch from repo on every page load, save every change</label><p id="github-sync-status" class="quiet" role="status">Not configured.</p><div class="cloud-fetch-actions"><button type="button" id="github-sync-reload" class="button ghost">Reload from GitHub</button><button type="button" id="github-sync-pause" class="button subtle">Pause sync</button></div></div>
-<div class="settings-section"><h3>GitHub Gist sync</h3><p class="quiet">Stores this collection in a private GitHub Gist and keeps it in sync across every device that opens this page with the same token. Lighter to set up than the repo sync above: no repo to create first, and the token only needs the narrower <strong>gist</strong> scope. Running both at once is fine — they sync independent copies.</p><div class="form-grid"><label class="field-label">Gist ID (blank = create new on first save)<input id="github-gist-sync-id" class="text-field" autocomplete="off" placeholder="blank creates a new private gist"></label><label class="field-label">GitHub token (gist scope)<input id="github-gist-sync-token" type="password" class="text-field" autocomplete="off" placeholder="Paste your token"></label></div><label class="inline-check"><input type="checkbox" id="github-gist-sync-enabled"> Keep this on automatically — load on open, save on every change</label><p id="github-gist-sync-status" class="quiet" role="status">Not configured.</p><div class="cloud-fetch-actions"><button type="button" id="github-gist-sync-reload" class="button ghost">Reload from Gist</button><button type="button" id="github-gist-sync-pause" class="button subtle">Pause sync</button></div></div>
-
-<div class="settings-section" id="nr-firestore-settings-section">
-<h3>☁ Cloud sync (cross-device)</h3>
-<p class="quiet">Keeps your watched list, ratings, notes, and favorites in sync across every device automatically. Free via Firebase. <a href="https://console.firebase.google.com" target="_blank" rel="noopener noreferrer">Create a free project →</a></p>
+<dialog id="settings-dialog" class="overlay" aria-labelledby="settings-title"><section class="modal-card settings-card"><header class="modal-header"><div><p class="eyebrow">Make the archive yours</p><h2 id="settings-title">Settings &amp; sync</h2></div><button type="button" class="icon-button close-modal" aria-label="Close settings">×</button></header><div class="modal-body">
+<div class="settings-section" id="nr-firestore-settings-section-top">
+<h3>☁ Cloud sync (recommended)</h3>
+<p class="quiet">Keeps your watched list, ratings, notes, and favorites in sync across every device automatically. Free via your own Firebase project. <a href="https://console.firebase.google.com" target="_blank" rel="noopener noreferrer">Create a free project →</a></p>
 <p id="nr-firestore-status" class="quiet" style="margin:12px 0">Not configured.</p>
 <div style="display:flex;gap:12px;flex-wrap:wrap">
-  <button type="button" class="button ghost" id="nr-open-cloud-sync">Configure cloud sync →</button>
+  <button type="button" class="button primary" id="nr-open-cloud-sync">Open cloud sync →</button>
 </div>
 </div>
-<div class="settings-section"><h3>Your collection</h3><button type="button" id="settings-new-collection" class="button ghost">Import a new collection</button><button type="button" id="delete-collection" class="text-button danger-text">Delete current collection</button></div><p id="settings-status" class="form-status" role="status" hidden></p></div><footer class="modal-footer"><span class="quiet">Readable type. Room to breathe.</span><button type="button" id="save-settings" class="button primary">Save preferences</button></footer></section></dialog>
+<div class="settings-section"><h3>Your collection</h3><button type="button" id="settings-new-collection" class="button ghost">Import a new collection</button><button type="button" id="delete-collection" class="text-button danger-text">Delete current collection</button></div>
+<div class="settings-section"><h3>Reading &amp; motion</h3><div class="form-grid"><label class="field-label">Text size<select id="setting-text" class="text-field"><option value="comfortable">Comfortable · 16 px</option><option value="large">Large · 18 px</option><option value="compact">Compact · 15 px</option></select></label><label class="field-label">Animation<select id="setting-motion" class="text-field"><option value="system">Follow system preference</option><option value="reduced">Reduce motion</option></select></label><label class="field-label">Rating display<select id="setting-rating-scale" class="text-field"><option value="5star">5-star (◆◇)</option><option value="10point">10-point</option><option value="thumbs">Thumbs up / down</option></select></label></div><p class="type-specimen">The films are yours. The story is still unfolding.</p></div><div class="settings-section"><h3>Poster artwork</h3><label class="inline-check"><input type="checkbox" id="setting-auto-posters" checked> Look up posters as they enter view</label><p class="quiet">Lookups send a film’s title and year to the selected service. Notes are never sent.</p><label class="field-label">Artwork service<select id="setting-provider" class="text-field"><option value="auto">Automatic · Wikipedia, then Apple Search; TMDB too with a token</option><option value="wikipedia">Wikipedia · no account needed</option><option value="tmdb">TMDB · read access token</option></select></label><div id="tmdb-token-fields" hidden><label class="field-label">TMDB API read access token<input id="setting-token" type="password" class="text-field" autocomplete="off" placeholder="Paste your token"></label><p class="quiet">The token stays in memory for this tab and is excluded from backups. <a href="https://www.themoviedb.org/settings/api" target="_blank" rel="noopener noreferrer">Get a TMDB token ↗</a></p></div><p class="quiet">Missing or mismatched artwork can be changed from any film’s chronicle.</p></div><div class="settings-section"><h3>Atmosphere &amp; preferences</h3><label class="field-label">Motion<select id="setting-effects" class="text-field"><option value="full">Full motion</option><option value="balanced">Balanced</option><option value="minimal">Minimal</option></select></label><label class="field-label">Preferred languages, comma separated<input id="preferred-languages" class="text-field" placeholder="Optional; used by Picks"></label><label class="field-label">Exclude these words from recommendations<input id="excluded-keywords" class="text-field" placeholder="Comma separated; optional"></label><label class="field-label">Viewing availability region<input id="watch-region" class="text-field" maxlength="2" placeholder="US"></label><button type="button" id="open-recovery" class="button ghost">Recovery checkpoints</button></div>
+<details class="edit-details settings-section">
+<summary><strong style="font-size:15px;font-weight:500">Advanced: GitHub-based sync</strong></summary>
+<p class="quiet" style="margin-top:12px">Alternatives to Cloud sync above, for people who already keep their list in a GitHub repo or Gist. Each needs its own GitHub token and runs independently of Cloud sync.</p>
+<div class="settings-section" style="margin-top:20px;border-bottom:0;padding-bottom:0"><h3>GitHub repo sync</h3><p class="quiet">Loads a <code>.md</code> file from a GitHub repo automatically on open, and writes every change back to it, so this collection stays identical across every device that opens this page. Uses the GitHub Contents API, which needs a <strong>repo</strong>-scoped token — not the Gist token, if you also use the separate Gist backup below.</p><div class="form-grid"><label class="field-label">Repo (owner/name)<input id="github-sync-repo" class="text-field" autocomplete="off" placeholder="yourname/movie-list"></label><label class="field-label">File path<input id="github-sync-path" class="text-field" autocomplete="off" placeholder="movies.md — blank finds the first .md file"></label><label class="field-label">Branch<input id="github-sync-branch" class="text-field" autocomplete="off" placeholder="blank = default branch"></label><label class="field-label">GitHub token (repo scope)<input id="github-sync-token" type="password" class="text-field" autocomplete="off" placeholder="Paste your token"></label></div><label class="inline-check"><input type="checkbox" id="github-sync-enabled"> Keep this on — auto-fetch from repo on every page load, save every change</label><p id="github-sync-status" class="quiet" role="status">Not configured.</p><div class="cloud-fetch-actions"><button type="button" id="github-sync-reload" class="button ghost">Reload from GitHub</button><button type="button" id="github-sync-pause" class="button subtle">Pause sync</button></div></div>
+<div class="settings-section" style="border-bottom:0;padding-bottom:0"><h3>GitHub Gist sync</h3><p class="quiet">Stores this collection in a private GitHub Gist and keeps it in sync across every device that opens this page with the same token. Lighter to set up than the repo sync above: no repo to create first, and the token only needs the narrower <strong>gist</strong> scope. Running both at once is fine — they sync independent copies.</p><div class="form-grid"><label class="field-label">Gist ID (blank = create new on first save)<input id="github-gist-sync-id" class="text-field" autocomplete="off" placeholder="blank creates a new private gist"></label><label class="field-label">GitHub token (gist scope)<input id="github-gist-sync-token" type="password" class="text-field" autocomplete="off" placeholder="Paste your token"></label></div><label class="inline-check"><input type="checkbox" id="github-gist-sync-enabled"> Keep this on automatically — load on open, save on every change</label><p id="github-gist-sync-status" class="quiet" role="status">Not configured.</p><div class="cloud-fetch-actions"><button type="button" id="github-gist-sync-reload" class="button ghost">Reload from Gist</button><button type="button" id="github-gist-sync-pause" class="button subtle">Pause sync</button></div></div>
+</details>
+<p id="settings-status" class="form-status" role="status" hidden></p></div><footer class="modal-footer"><span class="quiet">Readable type. Room to breathe.</span><button type="button" id="save-settings" class="button primary">Save preferences</button></footer></section></dialog>
 
 <dialog id="export-dialog" class="overlay" aria-labelledby="export-title"><section class="modal-card export-card"><header class="modal-header"><div><p class="eyebrow">Keep the chronicle</p><h2 id="export-title">Export &amp; backup</h2></div><button type="button" class="icon-button close-modal" aria-label="Close export">×</button></header><div class="modal-body"><div class="export-options"><button type="button" id="export-json"><span>❧</span><strong>Complete backup</strong><small>All collections, notes, ratings, and custom posters. Restorable JSON.</small><b>↓ JSON</b></button><button type="button" id="export-markdown"><span>≡</span><strong>Markdown collection</strong><small>The current collection, including watch marks, ratings, and notes.</small><b>↓ MD</b></button><button type="button" id="export-text"><span>✦</span><strong>Simple movie list</strong><small>One title per line. Easy to share or use somewhere else.</small><b>↓ TXT</b></button><button type="button" id="export-csv"><span>▦</span><strong>Spreadsheet</strong><small>Title, year, genres, watched, rating, and notes as columns. Opens in Excel or Sheets.</small><b>↓ CSV</b></button></div><button type="button" id="copy-list" class="text-button" style="margin-top:12px">Copy movie list to clipboard</button><div class="restore-section"><h3>Restore an archive</h3><p>Restore an exported backup. This replaces the current archive; an undo remains available in this session.</p><label for="restore-file" class="button ghost">Choose a JSON backup</label><input type="file" id="restore-file" accept="application/json,.json" hidden></div><p id="export-status" class="form-status" role="status" hidden></p></div></section></dialog>
 
@@ -1261,6 +1266,76 @@ const GitHubRepoSync = (() => {
   loadConfig();
   paused = !config.enabled;
   return {config: getConfig, setConfig, setToken, hasToken, configured, isPaused, setPaused, pull, push, schedulePush, flushPush, status: getStatus};
+})();
+
+// GitHubPagesStaticImport — zero-config import of a root movies.md when this page is
+// itself being served from GitHub Pages. GitHubRepoSync (above) needs a manually pasted
+// "repo"-scope token because it uses the authenticated Contents API (required for writes).
+// A static deployment has no server to hold that secret and often only wants a one-way
+// read, so this fetches the same repo's root file anonymously via raw.githubusercontent.com,
+// which has no auth requirement and a generous rate limit for public repos.
+const GitHubPagesStaticImport = (() => {
+  const CANDIDATE_NAMES = ['movies.md', 'movie-list.md', 'movielist.md', 'list.md', 'watchlist.md', 'watch-list.md', 'films.md'];
+  const CANDIDATE_BRANCHES = ['main', 'master'];
+
+  // Parses "<owner>.github.io" + optional "/<repo>/..." project-page path into
+  // {owner, repo}. Returns null for anything else (custom domains, localhost, file://,
+  // user/org root pages served at "<owner>.github.io/" with no repo segment to read from
+  // other than the page's own repo, which for a root page is "<owner>.github.io" itself).
+  function detectRepoFromLocation() {
+    if (typeof location === 'undefined' || !['http:', 'https:'].includes(location.protocol)) return null;
+    const host = location.hostname.toLowerCase();
+    const match = host.match(/^([a-z0-9-]+)\.github\.io$/);
+    if (!match) return null;
+    const owner = match[1];
+    const segments = location.pathname.split('/').filter(Boolean);
+    // Project page (owner.github.io/repo/...) publishes from the "repo" repository.
+    // User/org root page (owner.github.io/...) publishes from "<owner>.github.io" itself.
+    const repo = segments.length > 0 ? segments[0] : `${owner}.github.io`;
+    return {owner, repo};
+  }
+
+  async function fetchFirstAvailable(owner, repo) {
+    for (const branch of CANDIDATE_BRANCHES) {
+      for (const name of CANDIDATE_NAMES) {
+        const url = `https://raw.githubusercontent.com/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/${branch}/${name}`;
+        let response;
+        try { response = await fetch(url, {cache: 'no-store'}); }
+        catch { continue; }
+        if (response.ok) {
+          const text = await response.text();
+          if (text.trim()) return {name, branch, text};
+        }
+      }
+    }
+    return null;
+  }
+
+  // Runs once per page load. Only acts when nothing else has already populated an
+  // archive (no collections at all) and GitHubRepoSync isn't already handling this repo,
+  // so a user who has deliberately configured token-based sync is never overridden.
+  async function tryImport() {
+    if (archiveApp.archive.collections.length) return null;
+    if (GitHubRepoSync.configured()) return null;
+    const target = detectRepoFromLocation();
+    if (!target) return null;
+    const found = await fetchFirstAvailable(target.owner, target.repo);
+    if (!found) return null;
+    const parsed = LedgerCore.parseMovieText(found.text, {detectGenres: true, headingMode: 'auto'});
+    if (!parsed.films.length) return null;
+    const collection = {
+      id: LedgerCore.newId(),
+      name: found.name.replace(/\.[^.]+$/, ''),
+      films: parsed.films,
+      createdAt: new Date().toISOString(),
+      sourceName: `GitHub Pages: ${target.owner}/${target.repo}/${found.name}`,
+    };
+    archiveApp.archive.collections.push(collection);
+    archiveApp.archive.activeId = collection.id;
+    return {filmCount: parsed.films.length, name: collection.name};
+  }
+
+  return {detectRepoFromLocation, tryImport};
 })();
 
 // GitHubGistSync — reads/writes one file inside a GitHub Gist via the Gist API.
@@ -3424,7 +3499,12 @@ async function autoImportAdjacentFiles(){
   showMessage(`Auto-imported ${totalAdded.toLocaleString()} films from ${names.join(', ')}.`,true);
 }
 
-async function initializeKingdom(){await realmBase.initializeArchive();archiveApp.archive=KingdomDomain.upgradeArchive(archiveApp.archive,archiveApp.archive);try{const stored=JSON.parse(localStorage.getItem('HOLLOW_KINGDOM_LENS_V3')||'null');if(stored)Object.assign(archiveApp,KingdomDomain.sanitizeFilters(stored));}catch{/* Damaged optional filters leave the underlying archive intact. */}realmState.ready=true;bindRealmEvents();renderArchive(true);if(GitHubRepoSync.configured()&&!GitHubRepoSync.isPaused())void githubSyncPullAndApply();if(GitHubGistSync.configured()&&!GitHubGistSync.isPaused())void githubGistSyncPullAndApply();
+async function initializeKingdom(){await realmBase.initializeArchive();archiveApp.archive=KingdomDomain.upgradeArchive(archiveApp.archive,archiveApp.archive);try{const stored=JSON.parse(localStorage.getItem('HOLLOW_KINGDOM_LENS_V3')||'null');if(stored)Object.assign(archiveApp,KingdomDomain.sanitizeFilters(stored));}catch{/* Damaged optional filters leave the underlying archive intact. */}
+  let staticImportResult=null;
+  try{staticImportResult=await GitHubPagesStaticImport.tryImport();}catch{/* No movies.md reachable at any candidate name/branch; the welcome screen covers this case. */}
+  realmState.ready=true;bindRealmEvents();renderArchive(true);
+  if(staticImportResult)showMessage(`Loaded ${staticImportResult.filmCount.toLocaleString()} films from ${staticImportResult.name}.`,true);
+  if(GitHubRepoSync.configured()&&!GitHubRepoSync.isPaused())void githubSyncPullAndApply();if(GitHubGistSync.configured()&&!GitHubGistSync.isPaused())void githubGistSyncPullAndApply();
   if(typeof location!=='undefined'&&['http:','https:'].includes(location.protocol)){
     // Hash token from bridge launch URL takes priority; sessionStorage fallback restores across reloads.
     const fragment=new URLSearchParams(location.hash.slice(1));const code=fragment.get('bridge-token');
@@ -5343,20 +5423,15 @@ const fb = {
 function el(id) { return document.getElementById(id); }
 
 function setAuthUI(user) {
-  const btn = el('nr-auth-btn');
   const info = el('nr-auth-info');
-  if (!btn) return;
+  if (!info) return;
   if (user) {
-    btn.textContent = '☁ ' + (user.displayName?.split(' ')[0] || user.email?.split('@')[0] || 'Synced');
-    btn.title = `Signed in as ${user.email || user.displayName} · click to manage`;
-    if (info) {
-      info.textContent = user.displayName || user.email || 'Signed in';
-      info.hidden = false;
-    }
+    info.textContent = '☁ ' + (user.displayName || user.email || 'Synced');
+    info.title = `Signed in as ${user.email || user.displayName} · open Settings to manage`;
+    info.hidden = false;
   } else {
-    btn.textContent = 'Sign in';
-    btn.title = 'Sign in to sync across devices';
-    if (info) { info.textContent = ''; info.hidden = true; }
+    info.textContent = '';
+    info.hidden = true;
   }
 }
 
@@ -5691,6 +5766,7 @@ function buildAuthDialog() {
     <div class="modal-body" id="nr-auth-body">
       <div id="nr-auth-signedout">
         <p class="quiet" style="margin-bottom:24px">Sign in to sync your watched list, ratings, and notes across all your devices. All your data is stored only in your account — no one else can see it.</p>
+        <p id="nr-no-config-notice" class="quiet" hidden style="margin-bottom:16px">Connect a Firebase project below before signing in.</p>
         <button type="button" class="button primary large" id="nr-signin-google" style="width:100%;margin-bottom:12px;gap:12px">
           <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#4285F4" d="M44.5 20H24v8.5h11.8C34.7 33.9 29.9 37 24 37c-7.2 0-13-5.8-13-13s5.8-13 13-13c3.1 0 5.9 1.1 8.1 2.9l6.4-6.4C34.6 4.1 29.6 2 24 2 11.8 2 2 11.8 2 24s9.8 22 22 22c11 0 21-8 21-22 0-1.3-.2-2.7-.5-4z"/><path fill="#34A853" d="M6.3 14.7l7 5.1C15 16.1 19.1 13 24 13c3.1 0 5.9 1.1 8.1 2.9l6.4-6.4C34.6 4.1 29.6 2 24 2 16.2 2 9.5 7.4 6.3 14.7z"/><path fill="#FBBC05" d="M24 46c5.8 0 10.8-1.9 14.6-5.2l-6.7-5.5C29.9 37 27.1 38 24 38c-5.8 0-10.8-3.9-11.9-9.2l-7 5.4C8.1 41.4 15.5 46 24 46z"/><path fill="#EA4335" d="M44.5 20H24v8.5h11.8c-1 3.3-3.3 6-6.3 7.8l6.7 5.5C40.3 38.3 45 32 45 24c0-1.3-.2-2.7-.5-4z"/></svg>
           Continue with Google
@@ -5705,17 +5781,17 @@ function buildAuthDialog() {
           <button type="button" class="button ghost" id="nr-signup-email" style="flex:1">Create account</button>
         </div>
         <p id="nr-auth-error" class="form-status is-error" style="margin-top:12px" hidden></p>
+        <details id="nr-firebase-config-details" class="edit-details" style="margin-top:24px">
+          <summary>Firebase project (for your own sync backend)</summary>
+          <p class="quiet" style="margin-top:12px">Nightreel needs a <a href="https://firebase.google.com" target="_blank" rel="noopener noreferrer">Firebase</a> project to sync your data. Paste your project config below — found in Firebase Console → Project settings → General → Your apps. In the console, also set Firestore rules to: <code style="font-size:11px">allow read, write: if request.auth.uid == uid</code> under <code style="font-size:11px">/users/{uid}/{document=**}</code>.</p>
+          <label class="field-label" style="margin-top:16px">Firebase config JSON<textarea id="nr-firebase-config-input" class="text-field" rows="6" style="font-family:monospace;font-size:12px" placeholder='{"apiKey":"...","authDomain":"...","projectId":"..."}'></textarea></label>
+          <button type="button" class="button" id="nr-firebase-config-save" style="margin-top:8px">Save config and connect</button>
+          <p id="nr-firebase-config-status" class="form-status" style="margin-top:8px"></p>
+        </details>
       </div>
       <div id="nr-auth-signedin" hidden>
         <p id="nr-user-info" class="quiet" style="margin-bottom:24px"></p>
-        <div class="settings-section">
-          <h3>Firebase project (required)</h3>
-          <p class="quiet">Nightreel uses <a href="https://firebase.google.com" target="_blank" rel="noopener noreferrer">Firebase</a> for free cross-device sync. Paste your Firebase project config below. In your Firebase console, also set Firestore rules to: <code style="font-size:11px">allow read, write: if request.auth.uid == uid</code> under <code style="font-size:11px">/users/{uid}/{document=**}</code>.</p>
-          <label class="field-label" style="margin-top:16px">Firebase config JSON<textarea id="nr-firebase-config-input" class="text-field" rows="6" style="font-family:monospace;font-size:12px" placeholder='{"apiKey":"...","authDomain":"...","projectId":"..."}'></textarea></label>
-          <button type="button" class="button" id="nr-firebase-config-save" style="margin-top:8px">Save config and reconnect</button>
-          <p id="nr-firebase-config-status" class="form-status" style="margin-top:8px"></p>
-        </div>
-        <div style="margin-top:24px;border-top:1px solid var(--line);padding-top:24px;display:flex;justify-content:space-between;align-items:center">
+        <div style="display:flex;justify-content:space-between;align-items:center">
           <div>
             <strong style="font-size:15px" id="nr-signedout-name"></strong>
             <p id="nr-sync-status-line" class="quiet" style="margin-top:4px"></p>
@@ -5723,6 +5799,12 @@ function buildAuthDialog() {
           <button type="button" class="button ghost" id="nr-signout-btn">Sign out</button>
         </div>
         <button type="button" class="button primary" id="nr-force-sync" style="margin-top:16px;width:100%">⟳ Sync now</button>
+        <details id="nr-firebase-config-details-signedin" class="edit-details" style="margin-top:24px">
+          <summary>Firebase project</summary>
+          <label class="field-label" style="margin-top:16px">Firebase config JSON<textarea id="nr-firebase-config-input-signedin" class="text-field" rows="6" style="font-family:monospace;font-size:12px"></textarea></label>
+          <button type="button" class="button" id="nr-firebase-config-save-signedin" style="margin-top:8px">Save config and reconnect</button>
+          <p id="nr-firebase-config-status-signedin" class="form-status" style="margin-top:8px"></p>
+        </details>
       </div>
     </div>
   </section>`;
@@ -5745,14 +5827,24 @@ function renderAuthDialog() {
     if (statusLine) statusLine.textContent = fb.lastSyncedAt
       ? `Last synced ${new Date(fb.lastSyncedAt).toLocaleString()}`
       : 'Ready to sync';
+    const configInputSignedIn = el('nr-firebase-config-input-signedin');
+    if (configInputSignedIn) {
+      const cfg = getFirebaseConfig();
+      if (cfg) configInputSignedIn.value = JSON.stringify(cfg, null, 2);
+    }
+  } else {
+    signedOut.hidden = false;
+    signedIn.hidden = true;
+    const notice = el('nr-no-config-notice');
+    const details = el('nr-firebase-config-details');
+    const hasConfig = !!getFirebaseConfig();
+    if (notice) notice.hidden = hasConfig;
+    if (details && !hasConfig) details.open = true;
     const configInput = el('nr-firebase-config-input');
     if (configInput) {
       const cfg = getFirebaseConfig();
       if (cfg) configInput.value = JSON.stringify(cfg, null, 2);
     }
-  } else {
-    signedOut.hidden = false;
-    signedIn.hidden = true;
   }
 }
 
@@ -5762,7 +5854,7 @@ function bindAuthDialogEvents(dialog) {
   dialog.addEventListener('click', e => { if (e.target === dialog) close(); });
 
   el('nr-signin-google').addEventListener('click', async () => {
-    if (!fb.auth) return showAuthError('Firebase not initialized. Paste a Firebase config first.');
+    if (!fb.auth) { const d = el('nr-firebase-config-details'); if (d) d.open = true; return showAuthError('Connect a Firebase project below first.'); }
     clearAuthError();
     setAuthBusy(true);
     try {
@@ -5775,7 +5867,7 @@ function bindAuthDialogEvents(dialog) {
   });
 
   el('nr-signin-email').addEventListener('click', async () => {
-    if (!fb.auth) return showAuthError('Firebase not initialized.');
+    if (!fb.auth) { const d = el('nr-firebase-config-details'); if (d) d.open = true; return showAuthError('Connect a Firebase project below first.'); }
     const email = el('nr-email').value.trim();
     const pw = el('nr-password').value;
     if (!email || !pw) return showAuthError('Enter your email and password.');
@@ -5789,7 +5881,7 @@ function bindAuthDialogEvents(dialog) {
   });
 
   el('nr-signup-email').addEventListener('click', async () => {
-    if (!fb.auth) return showAuthError('Firebase not initialized.');
+    if (!fb.auth) { const d = el('nr-firebase-config-details'); if (d) d.open = true; return showAuthError('Connect a Firebase project below first.'); }
     const email = el('nr-email').value.trim();
     const pw = el('nr-password').value;
     if (!email || !pw) return showAuthError('Enter an email and password to create an account.');
@@ -5818,27 +5910,31 @@ function bindAuthDialogEvents(dialog) {
     showNightreelMessage('Synced ✓');
   });
 
-  el('nr-firebase-config-save').addEventListener('click', async () => {
-    const input = el('nr-firebase-config-input').value.trim();
-    const status = el('nr-firebase-config-status');
+  async function saveConfigFrom(inputId, statusId) {
+    const input = el(inputId).value.trim();
+    const status = el(statusId);
     try {
       const cfg = JSON.parse(input);
       if (!cfg.apiKey || !cfg.projectId) throw new Error('Config must include apiKey and projectId.');
       saveFirebaseConfig(cfg);
-      status.textContent = 'Config saved. Reinitializing…';
+      status.textContent = 'Config saved. Connecting…';
       status.classList.remove('is-error');
       const ok = await initFirebase(cfg);
       if (ok) {
         status.textContent = 'Connected. Sign in to start syncing.';
+        const notice = el('nr-no-config-notice');
+        if (notice) notice.hidden = true;
       } else {
-        status.textContent = 'Could not initialize Firebase with this config. Check the values.';
+        status.textContent = `Could not connect: ${fb.lastError || 'check the values.'}`;
         status.classList.add('is-error');
       }
     } catch (e) {
       status.textContent = e.message;
       status.classList.add('is-error');
     }
-  });
+  }
+  el('nr-firebase-config-save').addEventListener('click', () => saveConfigFrom('nr-firebase-config-input', 'nr-firebase-config-status'));
+  el('nr-firebase-config-save-signedin').addEventListener('click', () => saveConfigFrom('nr-firebase-config-input-signedin', 'nr-firebase-config-status-signedin'));
 }
 
 function showAuthError(msg) {
@@ -5856,43 +5952,31 @@ function setAuthBusy(busy) {
   }
 }
 
-// ---- Inject topbar auth button ----
+// ---- Inject topbar sync status badge ----
+// No separate "Sign in" button here: Settings → Cloud sync already opens this same
+// dialog (nr-open-cloud-sync), so a second entry point in the topbar would just be a
+// redundant way to reach the same place. Only a small status badge is injected.
 function injectTopbarAuth() {
   const actions = document.querySelector('.topbar-actions');
-  if (!actions || el('nr-auth-btn')) return;
+  if (!actions || el('nr-sync-badge')) return;
 
   const syncBadge = document.createElement('span');
   syncBadge.id = 'nr-sync-badge';
   syncBadge.hidden = true;
   syncBadge.style.cssText = 'font-size:11px;color:var(--jade);letter-spacing:.05em;white-space:nowrap;align-self:center';
 
-  const authBtn = document.createElement('button');
-  authBtn.id = 'nr-auth-btn';
-  authBtn.type = 'button';
-  authBtn.className = 'button subtle';
-  authBtn.textContent = '☁ Sync';
-  authBtn.title = 'Sign in for cross-device sync (optional)';
-  authBtn.addEventListener('click', () => {
-    buildAuthDialog();
-    renderAuthDialog();
-    el('nr-auth-dialog').showModal();
-  });
-
   const authInfo = document.createElement('span');
   authInfo.id = 'nr-auth-info';
   authInfo.hidden = true;
   authInfo.style.cssText = 'font-size:11px;color:var(--secondary);white-space:nowrap;overflow:hidden;max-width:120px;text-overflow:ellipsis;align-self:center';
 
-  // Insert before "Import list" button
   const importBtn = el('open-import');
   if (importBtn) {
     actions.insertBefore(syncBadge, importBtn);
     actions.insertBefore(authInfo, importBtn);
-    actions.insertBefore(authBtn, importBtn);
   } else {
     actions.appendChild(syncBadge);
     actions.appendChild(authInfo);
-    actions.appendChild(authBtn);
   }
 }
 
@@ -5952,30 +6036,7 @@ async function boot() {
   };
 }
 
-// Issue 1 fix: also patch initializeKingdom to trigger GitHub fetch even
-// if the config was just restored from Firestore user prefs.
-// We use a MutationObserver or a simple poll to catch the ready state.
-function ensureGitHubAutoFetch() {
-  const check = setInterval(() => {
-    if (typeof realmState !== 'undefined' && realmState.ready) {
-      clearInterval(check);
-      // If GitHub is configured but not yet synced this session, do it now.
-      const ghStatus = typeof GitHubRepoSync !== 'undefined' ? GitHubRepoSync.status() : null;
-      if (ghStatus && ghStatus.state === 'idle' && !ghStatus.lastSyncedAt) {
-        if (typeof GitHubRepoSync !== 'undefined' && GitHubRepoSync.configured() && !GitHubRepoSync.isPaused()) {
-          void githubSyncPullAndApply({ announce: false });
-        }
-        if (typeof GitHubGistSync !== 'undefined' && GitHubGistSync.configured() && !GitHubGistSync.isPaused()) {
-          void githubGistSyncPullAndApply(false);
-        }
-      }
-    }
-  }, 300);
-  setTimeout(() => clearInterval(check), 30000);
-}
-
 boot();
-ensureGitHubAutoFetch();
 
 })();
 </script>
