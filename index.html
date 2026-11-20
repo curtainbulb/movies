@@ -5,16 +5,17 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="description" content="A personal cinema archive. Import any movie list, discover artwork, and keep your own chronicle.">
 <title>Nightreel · Your Cinema Archive</title>
+<script src="supabase-config.js"></script>
+<script src="vendor/supabase.js"></script>
+<script src="sync-core.js"></script>
+<script>window.NIGHTREEL_AUTH_PENDING = !!(window.NIGHTREEL_CONFIG?.supabaseUrl && window.NIGHTREEL_CONFIG?.supabasePublishableKey);</script>
 <link rel="icon" href="data:,">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
 <style>:root {
   --void:#070A12; --ground:#0B101B; --surface:#111927; --raised:#182339; --selected:#203353;
   --line:#29364D; --line-bright:#526888; --text:#EDF1FA; --secondary:#ADBBD0; --muted:#7F92AF;
   --blue:#8DAEFF; --blue-dark:#436DC2; --blue-wash:rgba(141,174,255,.10); --ruby:#DF7289; --jade:#83C5AC;
   --overlay:rgba(4,7,14,.91); --veil:rgba(6,10,18,.80); --shadow:rgba(0,2,8,.65); --transparent:transparent;
-  --body-size:16px; --body:'Inter',system-ui,sans-serif; --display:'Cinzel',Georgia,serif;
+  --body-size:16px; --body:system-ui,sans-serif; --display:Georgia,serif;
   --space-1:4px; --space-2:8px; --space-3:16px; --space-4:24px; --space-5:36px; --space-6:48px;
   --radius-sm:8px; --radius-md:14px; --radius-lg:20px; --radius-pill:999px; --focus-ring:2px; --contrast-text:var(--text); --contrast-muted:var(--muted);
 }
@@ -124,7 +125,7 @@ body{--metal:var(--line-bright);--glass:var(--blue-wash)}body::before{content:''
 <p id="scheduler-indicator" class="scheduler-indicator" role="status" hidden></p>
 <div id="file-drop-overlay" class="file-drop-overlay" hidden><div><span aria-hidden="true">❋</span><h2>Open the gates.</h2><p>Drop your Markdown or text files here.</p></div></div>
 
-<dialog id="import-dialog" class="overlay" aria-labelledby="import-title"><section class="modal-card import-card"><header class="modal-header"><div><p class="eyebrow">Bring your own collection</p><h2 id="import-title">Open the archive.</h2></div><button type="button" class="icon-button close-modal" aria-label="Close import">×</button></header><div class="modal-body"><div class="tab-row" role="group" aria-label="Import method"><button type="button" id="import-tab-file" aria-pressed="true">Upload a file</button><button type="button" id="import-tab-paste" aria-pressed="false">Paste a list</button><button type="button" id="import-tab-cloud" aria-pressed="false">From a link</button></div><div id="file-import-pane"><label for="movie-files" class="drop-zone" id="import-drop-zone"><span class="drop-symbol" aria-hidden="true">❋</span><strong>Drop your list here</strong><span>or click to choose a file</span><small>.md · .txt · .text · .markdown</small></label><input type="file" id="movie-files" accept=".md,.markdown,.txt,.text,.list,.log,text/plain,text/markdown" multiple hidden><p id="import-file-label" class="quiet"></p></div><div id="paste-import-pane" hidden><label class="field-label" for="import-text">Movie titles, one per line</label><textarea id="import-text" class="text-field import-text" placeholder="A film title (year)&#10;Another film title&#10;&#10;Headings and watched checkboxes are welcome."></textarea></div><div id="cloud-import-pane" hidden><label class="field-label" for="import-cloud-url">Address<input id="import-cloud-url" class="text-field" type="url" autocomplete="url" placeholder="Paste a share link to a Markdown or text file" aria-describedby="import-cloud-feedback"></label><p id="import-cloud-feedback" class="source-url-hint" role="status" aria-live="polite"></p><div class="cloud-fetch-actions"><button type="button" id="import-cloud-fetch" class="button ghost" disabled>Fetch list</button><button type="button" id="import-cloud-cancel" class="button subtle" hidden>Cancel fetch</button></div><details class="source-help"><summary>Free places to host a list</summary><p class="quiet"><a href="https://docs.github.com/en/get-started/writing-on-github/editing-and-sharing-content-with-gists/creating-gists" target="_blank" rel="noopener noreferrer">GitHub Gist</a> · <a href="https://docs.github.com/en/repositories/working-with-files/using-files/viewing-and-understanding-files" target="_blank" rel="noopener noreferrer">GitHub raw file</a> · <a href="https://help.dropbox.com/share/create-and-share-link" target="_blank" rel="noopener noreferrer">Dropbox share link</a> · <a href="https://support.google.com/drive/answer/7166529?hl=en" target="_blank" rel="noopener noreferrer">Google Drive link</a></p><p class="quiet">pCloud links are recognized. Its Public Folder direct-link feature requires Premium; <a href="https://help.pcloud.com/article/shared-links" target="_blank" rel="noopener noreferrer">see pCloud sharing details</a>.</p></details></div><div class="import-options"><label class="field-label">Treat source headings as<select id="heading-mode" class="text-field"><option value="auto">Genres and source sections</option><option value="sections">Source sections only</option></select></label><label class="inline-check"><input type="checkbox" id="detect-genres" checked> Recognize genre headings</label><p class="quiet">Plain lists stay ungrouped. No genres are invented.</p></div><div id="import-preview" class="import-preview" hidden><div id="import-preview-summary" class="preview-summary"></div><div id="import-preview-list" class="preview-list"></div><p id="import-warnings" class="warning-copy" hidden></p></div><div class="form-grid"><label class="field-label">Collection name<input id="import-name" class="text-field" maxlength="200" placeholder="My cinema archive"></label><label class="field-label">Import into<select id="import-target" class="text-field"><option value="new">A new collection</option><option value="append">Add to current collection</option><option value="replace">Replace current collection</option></select></label></div><p id="import-status" class="form-status" role="status" hidden></p></div><footer class="modal-footer"><span class="quiet">Your list is read in this browser.</span><button type="button" id="commit-import" class="button primary" disabled>Import films <span aria-hidden="true">↗</span></button></footer></section></dialog>
+<dialog id="import-dialog" class="overlay" aria-labelledby="import-title"><section class="modal-card import-card"><header class="modal-header"><div><p class="eyebrow">Bring your own collection</p><h2 id="import-title">Open the archive.</h2></div><button type="button" class="icon-button close-modal" aria-label="Close import">×</button></header><div class="modal-body"><div class="tab-row" role="group" aria-label="Import method"><button type="button" id="import-tab-file" aria-pressed="true">Upload a file</button><button type="button" id="import-tab-paste" aria-pressed="false">Paste a list</button><button type="button" id="import-tab-cloud" aria-pressed="false">From a link</button></div><div id="file-import-pane"><label for="movie-files" class="drop-zone" id="import-drop-zone"><span class="drop-symbol" aria-hidden="true">❋</span><strong>Drop your list here</strong><span>or click to choose a file</span><small>.md · .txt · .text · .markdown</small></label><input type="file" id="movie-files" accept=".md,.markdown,.txt,.text,.list,.log,text/plain,text/markdown" multiple hidden><p id="import-file-label" class="quiet"></p></div><div id="paste-import-pane" hidden><label class="field-label" for="import-text">Movie titles, one per line</label><textarea id="import-text" class="text-field import-text" placeholder="A film title (year)&#10;Another film title&#10;&#10;Headings and watched checkboxes are welcome."></textarea></div><div id="cloud-import-pane" hidden><label class="field-label" for="import-cloud-url">Address<input id="import-cloud-url" class="text-field" type="url" autocomplete="url" placeholder="Paste a share link to a Markdown or text file" aria-describedby="import-cloud-feedback"></label><p id="import-cloud-feedback" class="source-url-hint" role="status" aria-live="polite"></p><div class="cloud-fetch-actions"><button type="button" id="import-cloud-fetch" class="button ghost" disabled>Fetch list</button><button type="button" id="import-cloud-cancel" class="button subtle" hidden>Cancel fetch</button></div><details class="source-help"><summary>Free places to host a list</summary><p class="quiet"><a href="https://docs.github.com/en/get-started/writing-on-github/editing-and-sharing-content-with-gists/creating-gists" target="_blank" rel="noopener noreferrer">GitHub Gist</a> · <a href="https://docs.github.com/en/repositories/working-with-files/using-files/viewing-and-understanding-files" target="_blank" rel="noopener noreferrer">GitHub raw file</a> · <a href="https://help.dropbox.com/share/create-and-share-link" target="_blank" rel="noopener noreferrer">Dropbox share link</a></p><p class="quiet">pCloud links are recognized. Its Public Folder direct-link feature requires Premium; <a href="https://help.pcloud.com/article/shared-links" target="_blank" rel="noopener noreferrer">see pCloud sharing details</a>.</p></details></div><div class="import-options"><label class="field-label">Treat source headings as<select id="heading-mode" class="text-field"><option value="auto">Genres and source sections</option><option value="sections">Source sections only</option></select></label><label class="inline-check"><input type="checkbox" id="detect-genres" checked> Recognize genre headings</label><p class="quiet">Plain lists stay ungrouped. When adding to a collection, existing notes and ratings are kept; missing progress can be filled from the file.</p></div><div id="import-preview" class="import-preview" hidden><div id="import-preview-summary" class="preview-summary"></div><div id="import-preview-list" class="preview-list"></div><p id="import-warnings" class="warning-copy" hidden></p></div><div class="form-grid"><label class="field-label">Collection name<input id="import-name" class="text-field" maxlength="200" placeholder="My cinema archive"></label><label class="field-label">Import into<select id="import-target" class="text-field"><option value="new">A new collection</option><option value="append">Add to current collection</option><option value="replace">Replace current collection</option></select></label></div><p id="import-status" class="form-status" role="status" hidden></p></div><footer class="modal-footer"><span class="quiet">Your list is read in this browser.</span><button type="button" id="commit-import" class="button primary" disabled>Import films <span aria-hidden="true">↗</span></button></footer></section></dialog>
 
 <dialog id="chronicle-dialog" class="overlay" aria-labelledby="chronicle-title"><section class="modal-card chronicle-card"><button type="button" class="icon-button close-modal floating-close" aria-label="Close chronicle">×</button><div class="chronicle-artwork"><div id="chronicle-poster" class="detail-poster"></div><button type="button" id="change-poster" class="button ghost">Find / change poster</button><a id="chronicle-art-source" class="text-link" target="_blank" rel="noopener noreferrer" hidden></a></div><div class="chronicle-copy"><p class="eyebrow">The chronicle</p><h2 id="chronicle-title"></h2><p id="chronicle-meta" class="film-meta"></p><div id="chronicle-genres" class="detail-genres" hidden></div><div class="chronicle-actions"><button type="button" id="chronicle-watch" class="button primary">Mark watched</button><button type="button" id="chronicle-favorite" class="button" aria-pressed="false">♡ Favorite</button><button type="button" id="export-film-snippet" class="button ghost">Export chronicle</button></div><div class="detail-rating"><span>Your rating</span><div id="chronicle-rating" class="rating" role="radiogroup" aria-label="Your rating"></div><button type="button" id="clear-rating" class="text-button">Clear</button></div><p id="chronicle-overview" class="overview" hidden></p><button type="button" id="chronicle-overview-toggle" class="text-button" hidden>Read more</button><label class="field-label" for="chronicle-note">Your private notes</label><textarea id="chronicle-note" class="text-field chronicle-note" placeholder="What stayed with you?"></textarea><div class="note-status-line"><span id="chronicle-note-status" role="status">Saves as you write</span><span id="chronicle-note-count">0 characters</span></div><section class="chronicle-journey"><div class="section-heading"><h3>Its place in your journey</h3><span class="tiny-sigil" aria-hidden="true">✠</span></div><div class="form-grid"><label class="field-label">Viewing state<select id="journey-status" class="text-field"><option value="unwatched">Unwatched</option><option value="watching">Watching</option><option value="paused">Paused</option><option value="watched">Watched</option><option value="abandoned">Did not finish</option><option value="notInterested">Not interested</option></select></label><label class="field-label">Queue<select id="journey-queue" class="text-field"><option value="none">Not queued</option><option value="tonight">Tonight</option><option value="soon">Soon</option><option value="someday">Someday</option></select></label></div><div class="form-grid"><label class="field-label">Stopped at, minutes<input id="journey-position" class="text-field" type="number" min="0" max="100000"></label><label class="field-label">Snooze until<input id="journey-snooze" class="text-field" type="date"></label></div><button type="button" id="save-journey" class="button">Save journey state</button><details class="folio-details"><summary>Log a viewing or rewatch</summary><label class="field-label">Viewing date<input id="viewing-date" type="datetime-local" class="text-field"></label><label class="inline-check"><input type="checkbox" id="viewing-unknown"> Date unknown</label><div class="form-grid"><label class="field-label">Edition / cut<input id="viewing-edition" class="text-field" placeholder="Optional"></label><label class="field-label">Watched with<input id="viewing-companions" class="text-field" placeholder="Optional"></label></div><label class="field-label">A note about this viewing<input id="viewing-note" class="text-field" placeholder="Optional"></label><button type="button" id="log-viewing" class="button primary">✠ Log completed viewing</button></details><div id="film-history" class="viewing-events"></div><section id="similar-films-section" class="chronicle-journey" hidden><div class="section-heading"><h3>Similar films</h3><span class="tiny-sigil" aria-hidden="true">✦</span></div><div id="similar-films-list" class="similar-films-list"></div></section><details class="folio-details"><summary>Earlier versions of your notes</summary><div id="note-versions"></div></details><label class="inline-check ai-note-lock"><input type="checkbox" id="note-ai-lock"> Always exclude this note from AI requests</label></section>
 
@@ -137,25 +138,25 @@ body{--metal:var(--line-bright);--glass:var(--blue-wash)}body::before{content:''
 <dialog id="compass-dialog" class="overlay compass-overlay" aria-labelledby="compass-title"><section class="compass-rose" id="compass-rose"><header class="compass-heading"><p class="eyebrow">✦ Navigate your library</p><h2 id="compass-title">The Compass</h2></header><button type="button" class="icon-button close-modal compass-close" aria-label="Close Compass">×</button><div class="compass-search searchbox"><span aria-hidden="true">⌕</span><label class="sr-only" for="compass-search">Search your archive</label><input id="compass-search" placeholder="A film, a year, a search… (try &gt;settings or :unwatched french films under 100 min)" autocomplete="off"></div><div id="compass-command-preview" class="filter-chips-preview" hidden></div><div class="compass-stats"><p class="eyebrow">Your search</p><strong id="compass-watched">0 / 0</strong><span>films watched</span><div class="progress-track"><span id="compass-progress-fill"></span></div><div class="compass-stat-pairs"><p><b id="compass-notes">0</b> chronicles</p><p><b id="compass-favorites">0</b> favorites</p><p><b id="compass-today">0</b> watched today</p></div></div><div class="rose-hub" aria-hidden="true">✦</div><div id="compass-genre-region" class="compass-genre-region" hidden><div id="genre-spokes" class="genre-spokes" role="group" aria-label="Genre spokes. Navigate with arrow keys."></div><div class="spoke-pagination"><button type="button" id="spoke-prev" class="icon-button" aria-label="Previous genres">‹</button><span id="spoke-page"></span><button type="button" id="spoke-next" class="icon-button" aria-label="Next genres">›</button></div><p id="spoke-description"></p></div><div id="compass-plain-actions" class="compass-plain-actions" hidden><button type="button" data-command="pick"><span>✦</span><strong>Tonight’s pick</strong><small>Find an unwatched film</small></button><button type="button" data-command="import"><span>❋</span><strong>Bring another list</strong><small>Import or paste titles</small></button><button type="button" data-command="export"><span>❧</span><strong>Keep a copy</strong><small>Export and backup</small></button></div><div class="compass-bottom"><div class="compass-filter-chips" role="group" aria-label="Compass filters"><button type="button" data-compass-filter="all">All films</button><button type="button" data-compass-filter="unwatched">Unwatched</button><button type="button" data-compass-filter="watched">Watched</button><button type="button" data-compass-filter="favorites">Favorites</button><button type="button" data-compass-filter="noted">With notes</button></div><p id="compass-feedback" class="quiet"></p><div class="compass-command-row"><button type="button" data-command="pick" class="text-button">Tonight’s pick</button><button type="button" data-command="import" class="text-button">Import list</button><button type="button" data-command="export" class="text-button">Export archive</button></div></div></section></dialog>
 
 <dialog id="settings-dialog" class="overlay" aria-labelledby="settings-title"><section class="modal-card settings-card"><header class="modal-header"><div><p class="eyebrow">Make the archive yours</p><h2 id="settings-title">Settings &amp; sync</h2></div><button type="button" class="icon-button close-modal" aria-label="Close settings">×</button></header><div class="modal-body">
-<div class="settings-section" id="nr-firestore-settings-section-top">
-<h3>☁ Cloud sync (recommended)</h3>
-<p class="quiet">Keeps your watched list, ratings, notes, and favorites in sync across every device automatically. Free via your own Firebase project. <a href="https://console.firebase.google.com" target="_blank" rel="noopener noreferrer">Create a free project →</a></p>
-<p id="nr-firestore-status" class="quiet" style="margin:12px 0">Not configured.</p>
+<div class="settings-section" id="nr-cloud-settings">
+<h3>☁ Account &amp; cloud sync</h3>
+<p class="quiet">Sync your archive, notes, lists, and preferences across devices. Guest data stays separate until you choose to import it.</p>
+<p id="nr-sync-status" class="quiet" role="status" style="margin:12px 0">Checking account…</p>
 <div style="display:flex;gap:12px;flex-wrap:wrap">
   <button type="button" class="button primary" id="nr-open-cloud-sync">Open cloud sync →</button>
 </div>
 </div>
 <div class="settings-section"><h3>Your collection</h3><button type="button" id="settings-new-collection" class="button ghost">Import a new collection</button><button type="button" id="delete-collection" class="text-button danger-text">Delete current collection</button></div>
 <div class="settings-section"><h3>Reading &amp; motion</h3><div class="form-grid"><label class="field-label">Text size<select id="setting-text" class="text-field"><option value="comfortable">Comfortable · 16 px</option><option value="large">Large · 18 px</option><option value="compact">Compact · 15 px</option></select></label><label class="field-label">Animation<select id="setting-motion" class="text-field"><option value="system">Follow system preference</option><option value="reduced">Reduce motion</option></select></label><label class="field-label">Rating display<select id="setting-rating-scale" class="text-field"><option value="5star">5-star (◆◇)</option><option value="10point">10-point</option><option value="thumbs">Thumbs up / down</option></select></label></div><p class="type-specimen">The films are yours. The story is still unfolding.</p></div><div class="settings-section"><h3>Poster artwork</h3><label class="inline-check"><input type="checkbox" id="setting-auto-posters" checked> Look up posters as they enter view</label><p class="quiet">Lookups send a film’s title and year to the selected service. Notes are never sent.</p><label class="field-label">Artwork service<select id="setting-provider" class="text-field"><option value="auto">Automatic · Wikipedia, then Apple Search; TMDB too with a token</option><option value="wikipedia">Wikipedia · no account needed</option><option value="tmdb">TMDB · read access token</option></select></label><div id="tmdb-token-fields" hidden><label class="field-label">TMDB API read access token<input id="setting-token" type="password" class="text-field" autocomplete="off" placeholder="Paste your token"></label><p class="quiet">The token stays in memory for this tab and is excluded from backups. <a href="https://www.themoviedb.org/settings/api" target="_blank" rel="noopener noreferrer">Get a TMDB token ↗</a></p></div><p class="quiet">Missing or mismatched artwork can be changed from any film’s chronicle.</p></div><div class="settings-section"><h3>Atmosphere &amp; preferences</h3><label class="field-label">Motion<select id="setting-effects" class="text-field"><option value="full">Full motion</option><option value="balanced">Balanced</option><option value="minimal">Minimal</option></select></label><label class="field-label">Preferred languages, comma separated<input id="preferred-languages" class="text-field" placeholder="Optional; used by Picks"></label><label class="field-label">Exclude these words from recommendations<input id="excluded-keywords" class="text-field" placeholder="Comma separated; optional"></label><label class="field-label">Viewing availability region<input id="watch-region" class="text-field" maxlength="2" placeholder="US"></label><button type="button" id="open-recovery" class="button ghost">Recovery checkpoints</button></div>
-<details class="edit-details settings-section">
-<summary><strong style="font-size:15px;font-weight:500">Advanced: GitHub-based sync</strong></summary>
+<details id="guest-github-sync" class="edit-details settings-section">
+<summary><strong style="font-size:15px;font-weight:500">Advanced: GitHub-based sync (guest mode only)</strong></summary>
 <p class="quiet" style="margin-top:12px">Alternatives to Cloud sync above, for people who already keep their list in a GitHub repo or Gist. Each needs its own GitHub token and runs independently of Cloud sync.</p>
 <div class="settings-section" style="margin-top:20px;border-bottom:0;padding-bottom:0"><h3>GitHub repo sync</h3><p class="quiet">Loads a <code>.md</code> file from a GitHub repo automatically on open, and writes every change back to it, so this collection stays identical across every device that opens this page. Uses the GitHub Contents API, which needs a <strong>repo</strong>-scoped token — not the Gist token, if you also use the separate Gist backup below.</p><div class="form-grid"><label class="field-label">Repo (owner/name)<input id="github-sync-repo" class="text-field" autocomplete="off" placeholder="yourname/movie-list"></label><label class="field-label">File path<input id="github-sync-path" class="text-field" autocomplete="off" placeholder="movies.md — blank finds the first .md file"></label><label class="field-label">Branch<input id="github-sync-branch" class="text-field" autocomplete="off" placeholder="blank = default branch"></label><label class="field-label">GitHub token (repo scope)<input id="github-sync-token" type="password" class="text-field" autocomplete="off" placeholder="Paste your token"></label></div><label class="inline-check"><input type="checkbox" id="github-sync-enabled"> Keep this on — auto-fetch from repo on every page load, save every change</label><p id="github-sync-status" class="quiet" role="status">Not configured.</p><div class="cloud-fetch-actions"><button type="button" id="github-sync-reload" class="button ghost">Reload from GitHub</button><button type="button" id="github-sync-pause" class="button subtle">Pause sync</button></div></div>
 <div class="settings-section" style="border-bottom:0;padding-bottom:0"><h3>GitHub Gist sync</h3><p class="quiet">Stores this collection in a private GitHub Gist and keeps it in sync across every device that opens this page with the same token. Lighter to set up than the repo sync above: no repo to create first, and the token only needs the narrower <strong>gist</strong> scope. Running both at once is fine — they sync independent copies.</p><div class="form-grid"><label class="field-label">Gist ID (blank = create new on first save)<input id="github-gist-sync-id" class="text-field" autocomplete="off" placeholder="blank creates a new private gist"></label><label class="field-label">GitHub token (gist scope)<input id="github-gist-sync-token" type="password" class="text-field" autocomplete="off" placeholder="Paste your token"></label></div><label class="inline-check"><input type="checkbox" id="github-gist-sync-enabled"> Keep this on automatically — load on open, save on every change</label><p id="github-gist-sync-status" class="quiet" role="status">Not configured.</p><div class="cloud-fetch-actions"><button type="button" id="github-gist-sync-reload" class="button ghost">Reload from Gist</button><button type="button" id="github-gist-sync-pause" class="button subtle">Pause sync</button></div></div>
 </details>
 <p id="settings-status" class="form-status" role="status" hidden></p></div><footer class="modal-footer"><span class="quiet">Readable type. Room to breathe.</span><button type="button" id="save-settings" class="button primary">Save preferences</button></footer></section></dialog>
 
-<dialog id="export-dialog" class="overlay" aria-labelledby="export-title"><section class="modal-card export-card"><header class="modal-header"><div><p class="eyebrow">Keep the chronicle</p><h2 id="export-title">Export &amp; backup</h2></div><button type="button" class="icon-button close-modal" aria-label="Close export">×</button></header><div class="modal-body"><div class="export-options"><button type="button" id="export-json"><span>❧</span><strong>Complete backup</strong><small>All collections, notes, ratings, and custom posters. Restorable JSON.</small><b>↓ JSON</b></button><button type="button" id="export-markdown"><span>≡</span><strong>Markdown collection</strong><small>The current collection, including watch marks, ratings, and notes.</small><b>↓ MD</b></button><button type="button" id="export-text"><span>✦</span><strong>Simple movie list</strong><small>One title per line. Easy to share or use somewhere else.</small><b>↓ TXT</b></button><button type="button" id="export-csv"><span>▦</span><strong>Spreadsheet</strong><small>Title, year, genres, watched, rating, and notes as columns. Opens in Excel or Sheets.</small><b>↓ CSV</b></button></div><button type="button" id="copy-list" class="text-button" style="margin-top:12px">Copy movie list to clipboard</button><div class="restore-section"><h3>Restore an archive</h3><p>Restore an exported backup. This replaces the current archive; an undo remains available in this session.</p><label for="restore-file" class="button ghost">Choose a JSON backup</label><input type="file" id="restore-file" accept="application/json,.json" hidden></div><p id="export-status" class="form-status" role="status" hidden></p></div></section></dialog>
+<dialog id="export-dialog" class="overlay" aria-labelledby="export-title"><section class="modal-card export-card"><header class="modal-header"><div><p class="eyebrow">Keep the chronicle</p><h2 id="export-title">Export &amp; backup</h2></div><button type="button" class="icon-button close-modal" aria-label="Close export">×</button></header><div class="modal-body"><div class="export-options"><button type="button" id="export-json"><span>❧</span><strong>Complete backup</strong><small>All collections, progress, notes, lists, preferences, and custom posters. Restorable JSON.</small><b>↓ JSON</b></button><button type="button" id="export-markdown"><span>≡</span><strong>Markdown collection</strong><small>The current collection, including watch marks, ratings, and notes.</small><b>↓ MD</b></button><button type="button" id="export-text"><span>✦</span><strong>Simple movie list</strong><small>One title per line. Easy to share or use somewhere else.</small><b>↓ TXT</b></button><button type="button" id="export-csv"><span>▦</span><strong>Spreadsheet</strong><small>Current collection: title, year, genres, watched, favorite, rating, notes, and HTTPS posters.</small><b>↓ CSV</b></button></div><button type="button" id="copy-list" class="text-button" style="margin-top:12px">Copy movie list to clipboard</button><div class="restore-section"><h3>Restore an archive</h3><p>Restore a complete JSON backup. This replaces the current archive and saves a recovery point in this browser. Export a backup first for a separate copy.</p><label for="restore-file" class="button ghost">Choose a JSON backup</label><input type="file" id="restore-file" accept="application/json,.json" hidden></div><p id="export-status" class="form-status" role="status" hidden></p></div></section></dialog>
 
 <dialog id="pick-dialog" class="overlay" aria-labelledby="pick-title"><section class="modal-card pick-card"><button type="button" class="icon-button close-modal floating-close" aria-label="Close tonight’s pick">×</button><p class="eyebrow">Leave it to the realm</p><h2 id="pick-title">Tonight’s pick</h2><div id="pick-poster" class="pick-poster"></div><h3 id="pick-film-title"></h3><p id="pick-film-meta" class="film-meta"></p><div class="pick-actions"><button type="button" id="pick-open" class="button primary">Open chronicle ↗</button><button type="button" id="pick-shuffle" class="button ghost">✦ Draw another</button></div><p class="quiet">Drawn from the unwatched films in this collection.</p></section></dialog>
 
@@ -192,9 +193,9 @@ body{--metal:var(--line-bright);--glass:var(--blue-wash)}body::before{content:''
 <h3>Artwork</h3><p class="quiet">Clears stored misses and failures so missing posters are searched again with every available source.</p><div class="st-row"><button type="button" class="button ghost" id="st-retry-art">Retry missing artwork</button></div><p id="st-art-status" class="form-status st-status" role="status"></p>
 </div>
 <div class="st-pane" id="st-pane-sources" hidden>
-<p class="quiet">Connect a Markdown or text list hosted online. New films are added automatically and can be undone. Your ratings, notes, and watch history on films you already have are never overwritten, and films dropped from the source are only removed when you confirm. GitHub, Gist, Dropbox, Google Drive and Docs, OneDrive, SharePoint, pCloud, Pastebin, and common raw text links are recognized. Do not use addresses that contain secret tokens.</p>
+<p class="quiet">Connect a Markdown or text list hosted online. New films are added automatically and can be undone. Your ratings, notes, and watch history on films you already have are never overwritten, and films dropped from the source are only removed when you confirm. GitHub, Gist, Dropbox, OneDrive, SharePoint, pCloud, Pastebin, and common raw text links are recognized. Do not use addresses that contain secret tokens.</p>
 <form id="st-source-form" class="st-row"><label class="field-label">Name<input id="st-source-name" class="text-field" maxlength="80" autocomplete="off" placeholder="Optional"></label><label class="field-label">Address<input id="st-source-url" class="text-field" type="url" required autocomplete="url" placeholder="https://raw.githubusercontent.com/you/lists/main/movies.md" aria-describedby="st-source-url-feedback"><span id="st-source-url-feedback" class="source-url-hint" role="status" aria-live="polite"></span></label><label class="field-label">Into<select id="st-source-target" class="text-field"></select></label><label class="field-label">Refresh<select id="st-source-interval" class="text-field"></select></label><button type="submit" id="st-source-submit" class="button primary" disabled aria-disabled="true">Add and sync</button></form>
-<details class="source-help"><summary>Free places to host a list</summary><p class="quiet"><a href="https://docs.github.com/en/get-started/writing-on-github/editing-and-sharing-content-with-gists/creating-gists" target="_blank" rel="noopener noreferrer">GitHub Gist</a> · <a href="https://docs.github.com/en/repositories/working-with-files/using-files/viewing-and-understanding-files" target="_blank" rel="noopener noreferrer">GitHub raw file</a> · <a href="https://help.dropbox.com/share/create-and-share-link" target="_blank" rel="noopener noreferrer">Dropbox share link</a> · <a href="https://support.google.com/drive/answer/7166529?hl=en" target="_blank" rel="noopener noreferrer">Google Drive link</a></p><p class="quiet">pCloud links are recognized. Its Public Folder direct-link feature requires Premium; <a href="https://help.pcloud.com/article/shared-links" target="_blank" rel="noopener noreferrer">see pCloud sharing details</a>.</p></details>
+<details class="source-help"><summary>Free places to host a list</summary><p class="quiet"><a href="https://docs.github.com/en/get-started/writing-on-github/editing-and-sharing-content-with-gists/creating-gists" target="_blank" rel="noopener noreferrer">GitHub Gist</a> · <a href="https://docs.github.com/en/repositories/working-with-files/using-files/viewing-and-understanding-files" target="_blank" rel="noopener noreferrer">GitHub raw file</a> · <a href="https://help.dropbox.com/share/create-and-share-link" target="_blank" rel="noopener noreferrer">Dropbox share link</a></p><p class="quiet">pCloud links are recognized. Its Public Folder direct-link feature requires Premium; <a href="https://help.pcloud.com/article/shared-links" target="_blank" rel="noopener noreferrer">see pCloud sharing details</a>.</p></details>
 <p id="st-source-status" class="form-status st-status" role="status"></p><div id="st-source-list" class="st-list"></div>
 <p class="quiet">Automatic refresh runs while this page is open and visible. After repeated failures it backs off. Offline, the copy saved in this browser keeps working.</p>
 </div>
@@ -234,6 +235,15 @@ const LedgerCore = (() => {
 
   function newId(prefix = 'archive') {
     return `${prefix}-${globalThis.crypto?.randomUUID?.() || `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`}`;
+  }
+
+  // Keep legacy URLs in backups, but never request content from disabled services.
+  function restrictedUrl(candidate) {
+    try {
+      const host = new URL(candidate).hostname.toLowerCase();
+      const blocked = ['googleapis.com','googleusercontent.com','gstatic.com','ggpht.com','googlevideo.com','youtube.com','youtu.be','ytimg.com','firebaseio.com','firebaseapp.com'];
+      return /(^|\.)google\.[a-z.]+$/.test(host) || blocked.some(domain => host === domain || host.endsWith('.' + domain));
+    } catch { return false; }
   }
 
   function safeImageUrl(candidate) {
@@ -344,6 +354,7 @@ const LedgerCore = (() => {
       if (previous) {
         duplicates += 1;
         previous.watched ||= film.watched;
+        previous.favorite ||= film.favorite;
         previous.genres = [...new Set([...previous.genres, ...film.genres])];
         if(previous.sections)previous.sections = [...new Set([...previous.sections,...(film.sections||[])])];
         previous.description ||= film.description;
@@ -380,7 +391,7 @@ const LedgerCore = (() => {
           const film = makeFilm(parsed.title, {
             yearLabel: record.year || parsed.yearLabel,
             watched: /^(?:\[x\]|yes|true|watched|seen|✓|✔|☑)$/i.test((record.watched || record.seen || record.status || '').trim()) || parsed.watched,
-            rating: record.rating || parsed.rating, note: (record.notes || record.note || '').replace(/<br\s*\/?\s*>/gi, '\n'),
+            rating: record.rating || parsed.rating, favorite: /^(?:1|yes|true|favorite|favourite|✓|✔)$/i.test((record.favorite || record.favourite || '').trim()), note: (record.notes || record.note || '').replace(/<br\s*\/?\s*>/gi, '\n'),
             genres: [...parsed.genres, ...tableGenres], sections: [...sections,...(record.section || '').split(';').map(cleanMarkdown).filter(Boolean)], posterUrl: record.poster || record['poster url'] || ''
           });
           addFilm(film, index + 1);
@@ -430,7 +441,7 @@ const LedgerCore = (() => {
     return [...titles].map(part => identity(part, yearLabel));
   }
 
-  function mergeFilms(current, incoming) {
+  function mergeFilms(current, incoming, {includeProgress = false} = {}) {
     const merged = current.map(film => ({...film, genres: [...film.genres]}));
     const positions = new Map();
     merged.forEach((film, index) => { for (const key of identityKeys(film.title, film.yearLabel)) if (!positions.has(key)) positions.set(key, index); });
@@ -446,6 +457,16 @@ const LedgerCore = (() => {
         if(previous.sections)previous.sections = [...new Set([...previous.sections,...(film.sections||[])])];
         previous.description ||= film.description;
         previous.posterUrl ||= film.posterUrl;
+        if (includeProgress) {
+          if (!previous.watched && film.watched) {
+            previous.watched = true; previous.watchedAt = film.watchedAt || null;
+            previous.watchStatus = 'watched'; previous.queue = 'none';
+            if (!previous.watchHistory?.length && film.watchHistory?.length) previous.watchHistory = structuredClone(film.watchHistory);
+          }
+          previous.favorite ||= film.favorite;
+          previous.rating ||= film.rating;
+          previous.note ||= film.note;
+        }
       } else {
         for (const key of keys) if (!positions.has(key)) positions.set(key, merged.length);
         merged.push({...film, genres: [...film.genres]});
@@ -624,7 +645,7 @@ const LedgerCore = (() => {
     const result = scrubbed || input.replace(/[^.!?]*$/, '').trim();
     return {text: result, flagged: SPOILER_PATTERN.test(result) || !result};
   }
-  return {normalize, cleanMarkdown, identity, titleAliasSegments, newId, safeImageUrl, safeSourceUrl, makeFilm, parseFilmLine, parseMovieText, mergeFilms, filmMatches, sortFilms, statistics, exportMarkdown, exportFilmSnippet, exportCsv, emptyArchive, validateArchive, rankArtwork, spoilerScrub};
+  return {normalize, cleanMarkdown, identity, titleAliasSegments, newId, restrictedUrl, safeImageUrl, safeSourceUrl, makeFilm, parseFilmLine, parseMovieText, mergeFilms, filmMatches, sortFilms, statistics, exportMarkdown, exportFilmSnippet, exportCsv, emptyArchive, validateArchive, rankArtwork, spoilerScrub};
 })();
 
 /** Deterministic archive rules. Inferences never replace recorded metadata. */
@@ -672,7 +693,7 @@ const KingdomDomain = (() => {
     const viewingIds = new Set();
     const history = Array.isArray(source.watchHistory) ? source.watchHistory.filter(event => event && typeof event === 'object').map(event => ({
       id: uniqueId(event.id, 'viewing', viewingIds), date: date(event.date), completed: event.completed !== false,
-      minutes: finite(event.minutes,0,100000) ? Number(event.minutes) : null, edition: String(event.edition || '').slice(0,200), companions: String(event.companions || '').slice(0,300), note: String(event.note || '').slice(0,10000)
+      minutes: event.minutes !== null && event.minutes !== undefined && event.minutes !== '' && finite(event.minutes,0,100000) ? Number(event.minutes) : null, edition: String(event.edition || '').slice(0,200), companions: String(event.companions || '').slice(0,300), note: String(event.note || '').slice(0,10000)
     })) : film.watched ? [{id:LedgerCore.newId('viewing'),date:date(film.watchedAt),completed:true,minutes:null,edition:'',companions:'',note:''}] : [];
     const revisionIds = new Set();
     const noteHistory = Array.isArray(source.noteHistory) ? source.noteHistory.filter(item => item && typeof item.text === 'string').slice(-20).map(item => ({id:uniqueId(item.id,'revision',revisionIds),text:item.text,savedAt:date(item.savedAt)})) : [];
@@ -691,6 +712,19 @@ const KingdomDomain = (() => {
     };
   }
 
+  function sanitizeAISettings(source) {
+    const profiles = {};
+    if (source?.profiles && typeof source.profiles === 'object') {
+      for (const [id, profile] of Object.entries(source.profiles)) {
+        if (!/^[a-z0-9_-]{1,40}$/i.test(id) || !profile || typeof profile !== 'object') continue;
+        let base='';
+        try { const url=new URL(String(profile.base||'')); if(!url.username&&!url.password&&!url.search&&!url.hash&&(url.protocol==='https:'||(url.protocol==='http:'&&['localhost','127.0.0.1','[::1]'].includes(url.hostname))))base=(url.origin+url.pathname.replace(/\/$/,'')).slice(0,1000); } catch { /* Invalid model endpoints are not retained. */ }
+        profiles[id] = {enabled:profile.enabled===true,model:String(profile.model||'').slice(0,200),base,remember:profile.remember===true};
+      }
+    }
+    return {profiles,maxTitles:Math.min(600,Math.max(50,Number(source?.maxTitles)||250))};
+  }
+
   function upgradeArchive(archive, source = archive) {
     archive.version=3;
     const viewIds=new Set(),profileIds=new Set(),pathIds=new Set();
@@ -699,6 +733,7 @@ const KingdomDomain = (() => {
     archive.feedback=Array.isArray(source.feedback)?source.feedback.filter(item=>item&&typeof item.filmId==='string'&&['more','less','notTonight','notInterested'].includes(item.action)).slice(-1000).map(item=>({filmId:item.filmId,action:item.action,at:date(item.at)})):[];
     const collectionsById=new Map(archive.collections.map(collection=>[collection.id,collection]));
     const collectionByFilmId=new Map(archive.collections.flatMap(collection=>collection.films.map(film=>[film.id,collection.id])));
+    archive.feedback=archive.feedback.filter(item=>collectionByFilmId.has(item.filmId));
     archive.paths=Array.isArray(source.paths)?source.paths.filter(path=>path&&typeof path.name==='string'&&Array.isArray(path.filmIds)).slice(-100).flatMap(path=>{
       const filmIds=strings(path.filmIds).filter(id=>collectionByFilmId.has(id));
       const collectionId=collectionsById.has(path.collectionId)?path.collectionId:filmIds.length?collectionByFilmId.get(filmIds[0]):null;
@@ -709,6 +744,9 @@ const KingdomDomain = (() => {
       if(!scopedFilmIds.length)return [];
       return [{id:uniqueId(path.id,'path',pathIds),name:path.name.slice(0,160),collectionId,filmIds:scopedFilmIds,createdAt:date(path.createdAt)}];
     }):[];
+    archive.cloudSources=Array.isArray(source.cloudSources)?source.cloudSources.filter(item=>item&&typeof item.id==='string'&&typeof item.url==='string').slice(0,12):[];
+    if(source.viewState&&typeof source.viewState==='object')archive.viewState={...sanitizeFilters(source.viewState),grouping:source.viewState.grouping===true};
+    if(source.aiSettings&&typeof source.aiSettings==='object')archive.aiSettings=sanitizeAISettings(source.aiSettings);
     archive.preferences={languages:strings(source.preferences?.languages),excludedKeywords:strings(source.preferences?.excludedKeywords),region:typeof source.preferences?.region==='string'?source.preferences.region.slice(0,2).toUpperCase():'US',exploration:finite(source.preferences?.exploration,0,100)?Number(source.preferences.exploration):35};
     archive.settings.effects=['full','balanced','minimal'].includes(source.settings?.effects)?source.settings.effects:source.settings?.effects==='off'?'minimal':source.settings?.effects==='subtle'?'balanced':'full';
     for(const collection of archive.collections)for(let index=0;index<collection.films.length;index++)collection.films[index]=upgradeFilm(collection.films[index],collection.films[index]);
@@ -850,11 +888,16 @@ const KingdomDomain = (() => {
     return scored.filter(item => item.score > 0).sort((left, right) => right.score - left.score).slice(0, limit);
   }
 
-  return {upgradeFilm,upgradeArchive,matchesLanguage,valuesFor,coverage,historySummary,sanitizeFilters,extraMatches,parseIntent,rank,viewingPath,repairCandidates,noteMatches,validateAI,regionFor,regionsFor,matchesRegion,missingGenres,similarFilms,CANONICAL_GENRES,REGION_LIST:[...new Set(Object.values(REGION_MAP))]};
+  return {upgradeFilm,upgradeArchive,sanitizeAISettings,matchesLanguage,valuesFor,coverage,historySummary,sanitizeFilters,extraMatches,parseIntent,rank,viewingPath,repairCandidates,noteMatches,validateAI,regionFor,regionsFor,matchesRegion,missingGenres,similarFilms,CANONICAL_GENRES,REGION_LIST:[...new Set(Object.values(REGION_MAP))]};
 })();
 
 const ArchiveStorage = (() => {
-  const fallbackKey = 'HOLLOW_KINGDOM_ARCHIVE_V2';
+  let scope = 'guest';
+  const keyForScope = (key, targetScope) => targetScope === 'guest' ? key : `${key}:${targetScope}`;
+  const scopedKey = key => keyForScope(key, scope);
+  const fallbackKey = () => scopedKey('HOLLOW_KINGDOM_ARCHIVE_V2');
+  const stateKey = () => scope === 'guest' ? 'archive' : `archive:${scope}`;
+  const metaKey = () => `sync:${scope}`;
   let opening = null;
   let connection = null;
   let queue = Promise.resolve();
@@ -899,12 +942,23 @@ const ArchiveStorage = (() => {
     });
   }
 
+  function normalizeStored(candidate) {
+    const archive = candidate ? LedgerCore.validateArchive(candidate) : KingdomDomain.upgradeArchive(LedgerCore.emptyArchive());
+    if (scope === 'guest' && !candidate?.cloudSources) {
+      try { const legacy = JSON.parse(localStorage.getItem('HK_CLOUD_SOURCES_V1') || '[]'); if (Array.isArray(legacy)) archive.cloudSources = legacy; } catch { /* Optional source settings remain empty. */ }
+    }
+    if (scope === 'guest' && !candidate?.aiSettings) {
+      try { const legacy = JSON.parse(localStorage.getItem('HK_DIRECT_AI_V1') || 'null'); if (legacy) archive.aiSettings = KingdomDomain.sanitizeAISettings(legacy); } catch { /* Optional model preferences remain empty. */ }
+    }
+    return archive;
+  }
+
   async function load() {
     const database = await openDatabase();
     if (database) {
       try {
-        const [archive, artwork] = await Promise.all([transact(database, 'state', 'get', 'archive'), transact(database, 'artwork', 'getAll')]);
-        return {archive: archive ? LedgerCore.validateArchive(archive) : LedgerCore.emptyArchive(), artwork: Array.isArray(artwork) ? artwork : [], mode, error: ''};
+        const [archive, artwork] = await Promise.all([transact(database, 'state', 'get', stateKey()), transact(database, 'artwork', 'getAll')]);
+        return {archive: normalizeStored(archive), artwork: Array.isArray(artwork) ? artwork.filter(item => scope === 'guest' ? !item.scope || item.scope === scope : item.scope === scope) : [], mode, error: ''};
       } catch (error) {
         lastError = error.message;
         mode = 'session';
@@ -913,8 +967,8 @@ const ArchiveStorage = (() => {
       }
     }
     try {
-      const raw = localStorage.getItem(fallbackKey);
-      return {archive: raw ? LedgerCore.validateArchive(JSON.parse(raw)) : LedgerCore.emptyArchive(), artwork: [], mode, error: ''};
+      const raw = localStorage.getItem(fallbackKey());
+      return {archive: normalizeStored(raw ? JSON.parse(raw) : null), artwork: [], mode, error: ''};
     } catch (error) {
       lastError = error.message;
       fallbackBlocked = true;
@@ -925,12 +979,14 @@ const ArchiveStorage = (() => {
 
   function save(archive) {
     const snapshot = structuredClone(archive);
+    const targetKey = stateKey();
+    const targetFallbackKey = fallbackKey();
     queue = queue.catch(() => undefined).then(async () => {
       if (fallbackBlocked) throw new Error('The existing archive is protected because it could not be read. Export this session or explicitly restore a backup.');
       const database = await openDatabase();
       try {
-        if (database) await transact(database, 'state', 'put', 'archive', snapshot);
-        else localStorage.setItem(fallbackKey, JSON.stringify(snapshot));
+        if (database) await transact(database, 'state', 'put', targetKey, snapshot);
+        else localStorage.setItem(targetFallbackKey, JSON.stringify(snapshot));
         mode = database ? 'indexeddb' : 'localstorage';
         return mode;
       } catch (error) {
@@ -942,9 +998,10 @@ const ArchiveStorage = (() => {
   }
 
   async function saveArtwork(record) {
+    const targetScope = scope;
     const database = await openDatabase();
     if (!database || fallbackBlocked) return;
-    try { await transact(database, 'artwork', 'put', record.key, record); }
+    try { await transact(database, 'artwork', 'put', `${targetScope}:${record.key}`, {...record, scope: targetScope}); }
     catch { /* Artwork is a disposable cache; film state is saved separately. */ }
   }
 
@@ -952,22 +1009,58 @@ const ArchiveStorage = (() => {
 
   async function flush() { await queue; }
 
-  async function checkpoints() {
+  async function checkpoints(targetScope = scope) {
     const database = await openDatabase();
-    if (database) return (await transact(database, 'state', 'getAll')).filter(item => item?.kind === 'checkpoint').sort((left,right)=>right.createdAt.localeCompare(left.createdAt));
-    try { const stored = JSON.parse(localStorage.getItem('HOLLOW_KINGDOM_CHECKPOINTS_V3') || '[]'); return Array.isArray(stored) ? stored : []; }
+    if (database) return (await transact(database, 'state', 'getAll')).filter(item => item?.kind === 'checkpoint' && (targetScope === 'guest' ? !item.scope || item.scope === targetScope : item.scope === targetScope)).sort((left,right)=>right.createdAt.localeCompare(left.createdAt));
+    try { const stored = JSON.parse(localStorage.getItem(keyForScope('HOLLOW_KINGDOM_CHECKPOINTS_V3', targetScope)) || '[]'); return Array.isArray(stored) ? stored : []; }
     catch { throw new Error('Recovery checkpoints are unavailable in this browser. Export a backup instead.'); }
   }
   async function checkpoint(archive,label) {
     if (fallbackBlocked) throw new Error('Restore a readable archive before creating recovery checkpoints.');
-    const record={kind:'checkpoint',key:'checkpoint:'+LedgerCore.newId(),createdAt:new Date().toISOString(),label,archive:structuredClone(archive)};
+    const targetScope=scope;
+    const record={kind:'checkpoint',scope:targetScope,key:`checkpoint:${targetScope}:`+LedgerCore.newId(),createdAt:new Date().toISOString(),label,archive:structuredClone(archive)};
     const database=await openDatabase();
-    if(database){await transact(database,'state','put',record.key,record);const existing=await checkpoints();for(const old of existing.slice(8))await transact(database,'state','delete',old.key);}
-    else {const existing=await checkpoints();try{localStorage.setItem('HOLLOW_KINGDOM_CHECKPOINTS_V3',JSON.stringify([record,...existing].slice(0,3)));}catch{throw new Error('There is not enough local storage for a checkpoint. Export a JSON backup.');}}
+    if(database){await transact(database,'state','put',record.key,record);const existing=await checkpoints(targetScope);for(const old of existing.slice(8))await transact(database,'state','delete',old.key);}
+    else {const existing=await checkpoints(targetScope);try{localStorage.setItem(keyForScope('HOLLOW_KINGDOM_CHECKPOINTS_V3',targetScope),JSON.stringify([record,...existing].slice(0,3)));}catch{throw new Error('There is not enough local storage for a checkpoint. Export a JSON backup.');}}
     return record;
   }
 
-  return {load, save, saveArtwork, allowRestore, flush, checkpoint, checkpoints, status: () => ({mode, error: lastError})};
+  async function setScope(nextScope) {
+    await flush();
+    scope = nextScope;
+    fallbackBlocked = false;
+    return load();
+  }
+  async function readGuestArchive() {
+    await flush();
+    const database = await openDatabase();
+    const raw = database ? await transact(database, 'state', 'get', 'archive') : JSON.parse(localStorage.getItem('HOLLOW_KINGDOM_ARCHIVE_V2') || 'null');
+    const archive = raw ? LedgerCore.validateArchive(raw) : KingdomDomain.upgradeArchive(LedgerCore.emptyArchive());
+    if (!raw?.cloudSources) {
+      try { const legacy = JSON.parse(localStorage.getItem('HK_CLOUD_SOURCES_V1') || '[]'); if (Array.isArray(legacy)) archive.cloudSources = legacy; } catch { /* No usable legacy sources. */ }
+    }
+    if (!raw?.aiSettings) {
+      try { const legacy = JSON.parse(localStorage.getItem('HK_DIRECT_AI_V1') || 'null'); if (legacy) archive.aiSettings = KingdomDomain.sanitizeAISettings(legacy); } catch { /* No usable legacy model preferences. */ }
+    }
+    return archive;
+  }
+  async function readMeta() {
+    const database = await openDatabase();
+    if (database) return await transact(database, 'state', 'get', metaKey()) || null;
+    const raw = localStorage.getItem(metaKey());
+    return raw ? JSON.parse(raw) : null;
+  }
+  function writeMeta(meta) {
+    const key = metaKey();
+    const snapshot = structuredClone(meta);
+    queue = queue.catch(() => undefined).then(async () => {
+      const database = await openDatabase();
+      if (database) await transact(database, 'state', 'put', key, snapshot);
+      else localStorage.setItem(key, JSON.stringify(snapshot));
+    });
+    return queue;
+  }
+  return {load, save, saveArtwork, allowRestore, flush, checkpoint, checkpoints, setScope, readGuestArchive, readMeta, writeMeta, scopedKey, scope: () => scope, status: () => ({mode, error: lastError, protected: fallbackBlocked})};
 })();
 
 const ArtworkLookup = (() => {
@@ -1250,6 +1343,7 @@ const GitHubRepoSync = (() => {
   }
 
   async function flushPush(getText) {
+    if (!window.NightreelSync?.allowsGuestSync()) return {skipped: true};
     if (writing) { clearTimeout(pushTimer); pushTimer = setTimeout(() => void flushPush(getText), 1000); return {skipped: true}; }
     writing = true;
     status.state = 'syncing';
@@ -1315,12 +1409,13 @@ const GitHubPagesStaticImport = (() => {
   // archive (no collections at all) and GitHubRepoSync isn't already handling this repo,
   // so a user who has deliberately configured token-based sync is never overridden.
   async function tryImport() {
+    const scopeToken = window.NightreelSync?.scopeToken();
     if (archiveApp.archive.collections.length) return null;
     if (GitHubRepoSync.configured()) return null;
     const target = detectRepoFromLocation();
     if (!target) return null;
     const found = await fetchFirstAvailable(target.owner, target.repo);
-    if (!found) return null;
+    if (!found || scopeToken !== window.NightreelSync?.scopeToken() || window.NIGHTREEL_AUTH_PENDING || archiveApp.archive.collections.length) return null;
     const parsed = LedgerCore.parseMovieText(found.text, {detectGenres: true, headingMode: 'auto'});
     if (!parsed.films.length) return null;
     const collection = {
@@ -1465,6 +1560,7 @@ const GitHubGistSync = (() => {
   }
 
   async function flushPush(getText) {
+    if (!window.NightreelSync?.allowsGuestSync()) return {skipped: true};
     if (writing) { clearTimeout(pushTimer); pushTimer = setTimeout(() => void flushPush(getText), 1000); return {skipped: true}; }
     writing = true;
     status.state = 'syncing';
@@ -1528,16 +1624,17 @@ const ArchiveAI = (() => {
       throw new Error('Use HTTPS for a remote AI bridge, or HTTP on localhost.');
     if (parsed.username || parsed.password)
       throw new Error('Put the bridge access code in its field, not in the URL.');
+    if (LedgerCore.restrictedUrl(parsed.href)) throw new Error('This service host is unavailable.');
     endpoint = parsed.origin + parsed.pathname.replace(/\/$/, '');
     accessCode = token.trim();
     cache.clear();
     // Persist for same-tab reloads (sessionStorage is tab-scoped; never persists cross-tab).
-    try { sessionStorage.setItem(SESSION_KEY, JSON.stringify({ endpoint, accessCode })); } catch { /* blocked */ }
+    try { sessionStorage.setItem(ArchiveStorage.scopedKey(SESSION_KEY), JSON.stringify({ endpoint, accessCode })); } catch { /* blocked */ }
   }
 
   function restoreFromSession() {
     try {
-      const stored = JSON.parse(sessionStorage.getItem(SESSION_KEY) || 'null');
+      const stored = JSON.parse(sessionStorage.getItem(ArchiveStorage.scopedKey(SESSION_KEY)) || 'null');
       if (stored && typeof stored.endpoint === 'string' && stored.endpoint) {
         endpoint = stored.endpoint;
         accessCode = stored.accessCode || '';
@@ -1547,11 +1644,13 @@ const ArchiveAI = (() => {
     return false;
   }
 
+  function suspend() { endpoint = ''; accessCode = ''; cache.clear(); }
+
   function disconnect() {
     endpoint = '';
     accessCode = '';
     cache.clear();
-    try { sessionStorage.removeItem(SESSION_KEY); } catch { /* blocked */ }
+    try { sessionStorage.removeItem(ArchiveStorage.scopedKey(SESSION_KEY)); } catch { /* blocked */ }
   }
 
   async function request(path, body = null) {
@@ -1618,7 +1717,7 @@ const ArchiveAI = (() => {
 
   function cancel() { controller?.abort(); }
 
-  return { configure, restoreFromSession, disconnect, health: () => request('/api/health'), assist, fetchAdjacentFiles, cancel, connected: () => !!endpoint };
+  return { configure, restoreFromSession, suspend, disconnect, health: () => request('/api/health'), assist, fetchAdjacentFiles, cancel, connected: () => !!endpoint };
 })();
 
 const archiveApp = {
@@ -1796,14 +1895,14 @@ function applyAppearance() {
 }
 
 function persistView() {
-  try {localStorage.setItem('HOLLOW_KINGDOM_VIEW_V2',JSON.stringify({view:archiveApp.view,filter:archiveApp.filter,sort:archiveApp.sort,query:archiveApp.query,genre:archiveApp.genre,grouping:archiveApp.grouping,motion:archiveApp.archive.settings.effects,provider:archiveApp.archive.settings.provider}));}
+  try {localStorage.setItem(ArchiveStorage.scopedKey('HOLLOW_KINGDOM_VIEW_V2'),JSON.stringify({view:archiveApp.view,filter:archiveApp.filter,sort:archiveApp.sort,query:archiveApp.query,genre:archiveApp.genre,grouping:archiveApp.grouping,motion:archiveApp.archive.settings.effects,provider:archiveApp.archive.settings.provider}));}
   catch { /* View preferences are optional; failed archive writes are reported separately. */ }
 }
 
 function pendingNoteJournal(clear = false) {
   try {
-    if (clear) localStorage.removeItem('HOLLOW_KINGDOM_PENDING_NOTE');
-    else if (archiveApp.detailId) localStorage.setItem('HOLLOW_KINGDOM_PENDING_NOTE', JSON.stringify({collectionId: archiveApp.archive.activeId, filmId: archiveApp.detailId, note: archiveUi.chronicleNote.value}));
+    if (clear) localStorage.removeItem(ArchiveStorage.scopedKey('HOLLOW_KINGDOM_PENDING_NOTE'));
+    else if (archiveApp.detailId) localStorage.setItem(ArchiveStorage.scopedKey('HOLLOW_KINGDOM_PENDING_NOTE'), JSON.stringify({collectionId: archiveApp.archive.activeId, filmId: archiveApp.detailId, note: archiveUi.chronicleNote.value}));
   } catch { /* The main IndexedDB save remains available when localStorage is blocked. */ }
 }
 
@@ -1815,11 +1914,12 @@ function persistArchive() {
   return ArchiveStorage.save(archiveApp.archive).then(() => {
     if (revision !== archiveApp.saveRevision) return;
     archiveApp.saveError = false;
-    archiveUi.saveIndicator.textContent = window.NightreelFirestore?.isSignedIn() ? 'Saved & syncing' : 'Saved in this browser';
+    archiveUi.saveIndicator.textContent = window.NightreelSync?.isSignedIn() ? 'Saved locally · sync pending' : 'Saved in this browser';
     archiveUi.saveIndicator.classList.remove('is-error');
     pulse(archiveUi.saveIndicator);
     archiveUi.persistenceNotice.hidden = true;
     if (includesCurrentNote && noteRevision === archiveApp.noteRevision) pendingNoteJournal(true);
+    window.NightreelSync?.changed();
   }).catch(error => {
     if (revision !== archiveApp.saveRevision) return;
     archiveApp.saveError = true;
@@ -1859,7 +1959,7 @@ function undoAction() {
   flushChronicle();
   const entry = archiveApp.history.pop();
   if (!entry) { showMessage('There is nothing to undo.'); return; }
-  if (entry.kind === 'archive') archiveApp.archive = entry.before;
+  if (entry.kind === 'archive') { archiveApp.archive = entry.before; window.NightreelCloud?.useArchive(); applyArchiveView(); }
   else {
     const collection = archiveApp.archive.collections.find(item => item.id === entry.collectionId);
     if (!collection) { showMessage('That collection is no longer available.'); return; }
@@ -1971,7 +2071,7 @@ function paintPosterMount(mount, film) {
   const status = archiveApp.posterStatus.get(film.id);
   const placeholder = posterPlaceholder(film,status?.status || '');
   mount.replaceChildren(placeholder);
-  if (!match?.posterUrl) return;
+  if (!match?.posterUrl || LedgerCore.restrictedUrl(match.posterUrl)) return;
   const image = createNode('img','poster-image');
   image.alt = `${film.title} poster`;
   image.loading = 'lazy';
@@ -2385,6 +2485,12 @@ function chooseCollection(id) {
   flushChronicle();resetArtworkQueue();archiveApp.archive.activeId=id;archiveApp.selected.clear();archiveApp.selecting=false;archiveApp.genre='';archiveApp.query='';archiveApp.filter='all';archiveApp.renderLimit=96;archiveApp.hygieneScanDone=false;void persistArchive();renderArchive(true);
 }
 
+function applyArchiveView() {
+  Object.assign(archiveApp, {view:'posters',filter:'all',sort:'source',query:'',genre:'',grouping:false,runtimeMax:null,yearMin:null,yearMax:null,language:'',lens:null}, archiveApp.archive.viewState || {});
+  archiveUi.librarySearch.value = archiveApp.query || '';
+  archiveUi.compassSearch.value = archiveApp.query || '';
+}
+
 function setView(view) {flushChronicle();archiveApp.view=view;archiveApp.renderLimit=96;persistView();renderArchive(true);}
 function setFilter(filter) {archiveApp.filter=archiveApp.filter===filter?'all':filter;archiveApp.renderLimit=96;persistView();renderArchive(true);}
 function setQuery(query) {archiveApp.query=query;archiveApp.renderLimit=96;persistView();if(archiveUi.librarySearch.value!==query)archiveUi.librarySearch.value=query;if(archiveUi.compassSearch.value!==query)archiveUi.compassSearch.value=query;renderFilms();if(archiveUi.compassDialog.open)renderCompass();}
@@ -2392,8 +2498,8 @@ function setQuery(query) {archiveApp.query=query;archiveApp.renderLimit=96;persi
 function paintDetailArtwork(film) {
   paintPosterMount(archiveUi.chroniclePoster,film);
   const match=artworkRecord(film);
-  archiveUi.chronicleArtSource.hidden=!match?.sourceUrl;
-  if(match?.sourceUrl){archiveUi.chronicleArtSource.href=match.sourceUrl;archiveUi.chronicleArtSource.textContent=`Artwork source: ${match.source||'source'} ↗`;}
+  archiveUi.chronicleArtSource.hidden=!match?.sourceUrl || LedgerCore.restrictedUrl(match.sourceUrl);
+  if(match?.sourceUrl && !LedgerCore.restrictedUrl(match.sourceUrl)){archiveUi.chronicleArtSource.href=match.sourceUrl;archiveUi.chronicleArtSource.textContent=`Artwork source: ${match.source||'source'} ↗`;}
   const overview=film.description||match?.overview||'';
   archiveUi.chronicleOverview.textContent=overview;
   archiveUi.chronicleOverview.hidden=!overview;
@@ -2511,7 +2617,7 @@ function refreshImportPreview() {
     let parsed;
     if(!archiveUi.fileImportPane.hidden&&archiveApp.importFiles.length>1){
       let films=[];let duplicates=0;const warnings=[];
-      for(const source of archiveApp.importFiles){const part=LedgerCore.parseMovieText(source.text,{detectGenres:archiveUi.detectGenres.checked});const merged=LedgerCore.mergeFilms(films,part.films);films=merged.films;duplicates+=part.duplicates+merged.duplicates;warnings.push(...part.warnings.map(message=>`${source.name}: ${message}`));}
+      for(const source of archiveApp.importFiles){const part=LedgerCore.parseMovieText(source.text,{detectGenres:archiveUi.detectGenres.checked});const merged=LedgerCore.mergeFilms(films,part.films,{includeProgress:true});films=merged.films;duplicates+=part.duplicates+merged.duplicates;warnings.push(...part.warnings.map(message=>`${source.name}: ${message}`));}
       parsed={films,duplicates,warnings,genres:[...new Set(films.flatMap(film=>film.genres))]};
     }else parsed=LedgerCore.parseMovieText(archiveApp.importSource,{detectGenres:archiveUi.detectGenres.checked});
     archiveApp.importDraft=parsed;
@@ -2522,6 +2628,7 @@ function refreshImportPreview() {
 }
 
 function applyLegacyState(films) {
+  if (ArchiveStorage.scope() !== 'guest') return;
   try {
     const legacy=JSON.parse(localStorage.getItem('HOLLOW_KINGDOM_STATE')||'null');if(!legacy||typeof legacy!=='object')return;
     for(const film of films){const oldId=`${film.title}-${film.yearLabel||'undated'}`.normalize('NFKD').replace(/\p{M}/gu,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');const previous=legacy[oldId];if(!previous||typeof previous!=='object')continue;if(typeof previous.watched==='boolean')film.watched=previous.watched;if(Number.isInteger(previous.rating)&&previous.rating>=0&&previous.rating<=5)film.rating=previous.rating;if(typeof previous.note==='string')film.note=previous.note;}
@@ -2544,7 +2651,7 @@ function commitImport(confirmed = false) {
   if(existingCount+addedCount-(target==='replace'&&current?current.films.length:0)>50000){setFormStatus(archiveUi.importStatus,'The archive limit is 50,000 films. Replace a collection or remove films before importing more.',true);return;}
   flushChronicle();const before=structuredClone(archiveApp.archive);const films=draft.films.map(film=>structuredClone(film));applyLegacyState(films);
   let added=films.length;let duplicates=draft.duplicates;const collection=activeCollection();
-  if(target==='append'&&collection){const merged=LedgerCore.mergeFilms(collection.films,films);collection.films=merged.films;added=merged.added;duplicates+=merged.duplicates;}
+  if(target==='append'&&collection){const merged=LedgerCore.mergeFilms(collection.films,films,{includeProgress:true});collection.films=merged.films;added=merged.added;duplicates+=merged.duplicates;}
   else if(target==='replace'&&collection){removeFilmReferences(collection.films.map(film=>film.id));collection.films=films;collection.name=archiveUi.importName.value.trim()||collection.name;collection.sourceName=archiveApp.importSourceType==='cloud'?'Cloud: '+globalThis.NightreelCloud.label(archiveApp.cloudImportUrl):archiveApp.importSourceType==='paste'?'Pasted list':archiveApp.importFiles.map(file=>file.name).join(' · ');}
   else{const next={id:LedgerCore.newId(),name:archiveUi.importName.value.trim()||'My cinema archive',films,createdAt:new Date().toISOString(),sourceName:archiveApp.importSourceType==='cloud'?'Cloud: '+globalThis.NightreelCloud.label(archiveApp.cloudImportUrl):archiveApp.importSourceType==='paste'?'Pasted list':archiveApp.importFiles.map(file=>file.name).join(' · ')};archiveApp.archive.collections.push(next);archiveApp.archive.activeId=next.id;}
   pushHistory({kind:'archive',before,label:'Imported list'});resetArtworkQueue();archiveApp.selected.clear();archiveApp.selecting=false;archiveApp.view='posters';archiveApp.query='';archiveApp.genre='';archiveApp.filter='all';archiveApp.renderLimit=96;void persistArchive();renderArchive(true);closeOverlay(archiveUi.importDialog);showMessage(`${added.toLocaleString()} films ${target==='replace'?'imported':'added'}${duplicates?`; ${duplicates} duplicates merged`:''}.`,true);archiveUi.movieFiles.value='';archiveApp.cloudImportText='';archiveApp.cloudImportUrl='';document.getElementById('import-cloud-url').value='';
@@ -2599,14 +2706,14 @@ async function searchArtwork() {
   try{
     const candidates=await ArtworkLookup.search({...film,title:query},archiveApp.archive.settings.provider,true);if(revision!==archiveApp.artworkSearch||!archiveUi.artworkDialog.open)return;
     archiveApp.artworkCandidates=candidates;
-    archiveUi.artworkCandidates.replaceChildren(...candidates.map((candidate,index)=>{const control=createButton('artwork-candidate','', 'Use poster for '+candidate.title+', '+(candidate.year||'year unlisted'));control.dataset.artworkCandidate=String(index);const image=createNode('img');image.src=candidate.posterUrl;image.alt=candidate.title+' poster';image.loading='lazy';image.referrerPolicy='no-referrer';control.append(image,createNode('strong','',candidate.title),createNode('small','',(candidate.year||'Year unlisted')+' · '+candidate.source));return control;}));
+    archiveUi.artworkCandidates.replaceChildren(...candidates.map((candidate,index)=>{const control=createButton('artwork-candidate','', 'Use poster for '+candidate.title+', '+(candidate.year||'year unlisted'));control.dataset.artworkCandidate=String(index);const image=createNode('img');if(!LedgerCore.restrictedUrl(candidate.posterUrl))image.src=candidate.posterUrl;image.alt=candidate.title+' poster';image.loading='lazy';image.referrerPolicy='no-referrer';control.append(image,createNode('strong','',candidate.title),createNode('small','',(candidate.year||'Year unlisted')+' · '+candidate.source));return control;}));
     setFormStatus(archiveUi.artworkStatus,candidates.length?candidates.length+' '+(candidates.length===1?'match':'matches')+'. Choose the correct film.':'No poster matches were found. Try another title, paste an image URL, or upload your own poster.');
   }catch(error){if(revision===archiveApp.artworkSearch)setFormStatus(archiveUi.artworkStatus,error.message,true);}
   finally{if(revision===archiveApp.artworkSearch){button.disabled=false;button.removeAttribute('aria-busy');button.textContent='Search';}}
 }
 function useArtwork(candidate) {
   const film=activeFilm(archiveApp.artworkId);if(!film)return;
-  const url=LedgerCore.safeImageUrl(candidate.posterUrl);if(!url){setFormStatus(archiveUi.artworkStatus,'Use a valid HTTPS image URL or an uploaded PNG, JPEG, WebP, or GIF.',true);return;}
+  const url=LedgerCore.safeImageUrl(candidate.posterUrl);if(url&&LedgerCore.restrictedUrl(url)){setFormStatus(archiveUi.artworkStatus,'Use an image from another host or upload an image.',true);return;}if(!url){setFormStatus(archiveUi.artworkStatus,'Use a valid HTTPS image URL or an uploaded PNG, JPEG, WebP, or GIF.',true);return;}
   mutateFilms([film.id],current=>{current.posterUrl=url;current.posterSource=String(candidate.source||'');current.posterSourceUrl=LedgerCore.safeSourceUrl(candidate.sourceUrl);current.posterOverview=String(candidate.overview||'');},'Poster updated.');
   closeOverlay(archiveUi.artworkDialog);refreshArtwork(film.id);
 }
@@ -2675,12 +2782,29 @@ async function copyCollectionList() {
 
 async function restoreArchive(file) {
   if(!file)return;
+  const scopeToken=window.NightreelSync?.scopeToken();
   try{
     if(file.size>100*1024*1024)throw new Error('This backup exceeds 100 MB. Choose a smaller archive.');
     const restored=LedgerCore.validateArchive(JSON.parse(await file.text()));
-    confirmAction('Restore this backup?',`This will replace the current archive with ${restored.collections.length} collections. You can undo this during the session.`,()=>{
-      flushChronicle();pushHistory({kind:'archive',before:structuredClone(archiveApp.archive),label:'Restored backup'});archiveApp.archive=restored;ArchiveStorage.allowRestore();resetArtworkQueue();archiveApp.detailId=null;archiveApp.selected.clear();archiveApp.genre='';archiveApp.query='';archiveApp.filter='all';archiveApp.renderLimit=96;void persistArchive();renderArchive(true);setFormStatus(archiveUi.exportStatus,'Archive restored.');showMessage('Archive restored.',true);
-    },'Restore archive');
+    if(scopeToken!==window.NightreelSync?.scopeToken())return;
+    if(window.NightreelSync?.isSignedIn() && new Blob([JSON.stringify(restored)]).size>32*1024*1024)throw new Error('This backup exceeds the cloud archive limit. Reduce embedded posters or use guest mode and export a copy.');
+    confirmAction('Restore this backup?',`This replaces the current archive with ${restored.collections.length} collections. A recovery point will be saved in this browser.`,()=>{void (async()=>{
+      try {
+        if(scopeToken!==window.NightreelSync?.scopeToken())return;
+        flushChronicle();
+        const before=structuredClone(archiveApp.archive);
+        if(!ArchiveStorage.status().protected) await ArchiveStorage.checkpoint(before,'Before restoring a backup');
+        if(scopeToken!==window.NightreelSync?.scopeToken())return;
+        flushChronicle();
+        if(!NightreelMerge.same(before,archiveApp.archive)) throw new Error('The archive changed while preparing the restore. Review your changes and try again.');
+        pushHistory({kind:'archive',before,label:'Restored backup'});
+        archiveApp.archive=restored;window.NightreelCloud?.useArchive();ArchiveStorage.allowRestore();resetArtworkQueue();archiveApp.detailId=null;archiveApp.selected.clear();applyArchiveView();archiveApp.renderLimit=96;
+        await persistArchive();renderArchive(true);
+        if(archiveApp.saveError)throw new Error('The restored archive could not be saved in this browser. Export a backup before closing.');
+        setFormStatus(archiveUi.exportStatus,window.NightreelSync?.isSignedIn()?'Archive restored locally. Cloud sync is pending.':'Archive restored in this browser.');
+        showMessage('Archive restored.',true);
+      } catch(error) { setFormStatus(archiveUi.exportStatus,error.message,true); }
+    })();},'Restore archive');
   }catch(error){setFormStatus(archiveUi.exportStatus,error instanceof SyntaxError?'This file is not valid JSON. Choose a Nightreel backup.':error.message,true);}finally{archiveUi.restoreFile.value='';}
 }
 
@@ -3001,7 +3125,7 @@ function bindArchiveEvents() {
   cloudImportCancel.addEventListener('click',()=>{if(cloudImportController){cloudImportCancel.disabled=true;cloudImportCancel.textContent='Canceling…';cloudImportController.abort();}});
   archiveUi.importDialog.addEventListener('cancel',()=>cloudImportController?.abort());
   archiveUi.importDialog.addEventListener('close',()=>cloudImportController?.abort());
-  cloudImportFetch.addEventListener('click',async()=>{const input=cloudImportUrl.value;const inspection=globalThis.NightreelCloud.renderAddressFeedback('import-cloud-url','import-cloud-feedback','import');if(!inspection.valid)return;const controller=new AbortController();cloudImportController=controller;cloudImportUrl.disabled=true;cloudImportFetch.disabled=true;cloudImportFetch.setAttribute('aria-busy','true');cloudImportFetch.textContent='Fetching…';cloudImportCancel.disabled=false;cloudImportCancel.textContent='Cancel fetch';cloudImportCancel.hidden=false;setFormStatus(archiveUi.importStatus,'Fetching '+inspection.service+' link…');try{const result=await globalThis.NightreelCloud.fetchForImport(input,controller.signal);archiveApp.cloudImportText=result.text;archiveApp.cloudImportUrl=result.inspection.normalizedUrl;archiveApp.importSourceType='cloud';archiveApp.importSource=result.text;refreshImportPreview();setFormStatus(archiveUi.importStatus,'List fetched. Review the preview, then import.');}catch(error){if(error?.name==='AbortError')setFormStatus(archiveUi.importStatus,'Fetch canceled. You can edit the link or close this dialog.');else{const details=globalThis.NightreelCloud.inspectUrl(input);globalThis.NightreelCloud.setCloudFormStatus(archiveUi.importStatus,globalThis.NightreelCloud.failureMessage(input,error),true,details);}}finally{cloudImportController=null;cloudImportUrl.disabled=false;cloudImportCancel.hidden=true;cloudImportCancel.disabled=false;cloudImportCancel.textContent='Cancel fetch';cloudImportFetch.removeAttribute('aria-busy');cloudImportFetch.textContent='Fetch list';const latest=globalThis.NightreelCloud.renderAddressFeedback('import-cloud-url','import-cloud-feedback','import');cloudImportFetch.disabled=!latest.valid;}});
+  cloudImportFetch.addEventListener('click',async()=>{const scopeToken=window.NightreelSync?.scopeToken();const input=cloudImportUrl.value;const inspection=globalThis.NightreelCloud.renderAddressFeedback('import-cloud-url','import-cloud-feedback','import');if(!inspection.valid)return;const controller=new AbortController();cloudImportController=controller;cloudImportUrl.disabled=true;cloudImportFetch.disabled=true;cloudImportFetch.setAttribute('aria-busy','true');cloudImportFetch.textContent='Fetching…';cloudImportCancel.disabled=false;cloudImportCancel.textContent='Cancel fetch';cloudImportCancel.hidden=false;setFormStatus(archiveUi.importStatus,'Fetching '+inspection.service+' link…');try{const result=await globalThis.NightreelCloud.fetchForImport(input,controller.signal);if(scopeToken!==window.NightreelSync?.scopeToken())return;archiveApp.cloudImportText=result.text;archiveApp.cloudImportUrl=result.inspection.normalizedUrl;archiveApp.importSourceType='cloud';archiveApp.importSource=result.text;refreshImportPreview();setFormStatus(archiveUi.importStatus,'List fetched. Review the preview, then import.');}catch(error){if(error?.name==='AbortError')setFormStatus(archiveUi.importStatus,'Fetch canceled. You can edit the link or close this dialog.');else{const details=globalThis.NightreelCloud.inspectUrl(input);globalThis.NightreelCloud.setCloudFormStatus(archiveUi.importStatus,globalThis.NightreelCloud.failureMessage(input,error),true,details);}}finally{cloudImportController=null;cloudImportUrl.disabled=false;cloudImportCancel.hidden=true;cloudImportCancel.disabled=false;cloudImportCancel.textContent='Cancel fetch';cloudImportFetch.removeAttribute('aria-busy');cloudImportFetch.textContent='Fetch list';const latest=globalThis.NightreelCloud.renderAddressFeedback('import-cloud-url','import-cloud-feedback','import');cloudImportFetch.disabled=!latest.valid;}});
   archiveUi.movieFiles.addEventListener('change',()=>{void readImportFiles(archiveUi.movieFiles.files);});archiveUi.importText.addEventListener('input',()=>{clearTimeout(archiveApp.importTimer);archiveApp.importTimer=setTimeout(()=>{archiveApp.importSource=archiveUi.importText.value;refreshImportPreview();},180);});archiveUi.detectGenres.addEventListener('change',refreshImportPreview);archiveUi.commitImport.addEventListener('click',()=>commitImport());
   archiveUi.chronicleWatch.addEventListener('click',()=>{flushChronicle();toggleWatched(archiveApp.detailId);});archiveUi.chronicleFavorite.addEventListener('click',()=>{flushChronicle();toggleFavorite(archiveApp.detailId);});archiveUi.exportFilmSnippet.addEventListener('click',exportFilmChronicle);archiveUi.chronicleRating.addEventListener('click',event=>{const control=event.target.closest('[data-rating]');if(control){flushChronicle();changeRating(archiveApp.detailId,Number(control.dataset.rating));}});archiveUi.clearRating.addEventListener('click',()=>{flushChronicle();mutateFilms([archiveApp.detailId],film=>{film.rating=0;},'Rating cleared.',{silent:true});});archiveUi.chronicleOverviewToggle.addEventListener('click',()=>{const expanded=archiveUi.chronicleOverview.classList.toggle('is-expanded');archiveUi.chronicleOverviewToggle.textContent=expanded?'Show less':'Read more';});archiveUi.chronicleNote.addEventListener('input',scheduleChronicle);archiveUi.saveFilmDetails.addEventListener('click',saveFilmDetails);archiveUi.removeFilm.addEventListener('click',()=>confirmAction('Remove this film?',`“${activeFilm(archiveApp.detailId)?.title}” and its chronicle will leave this collection.`,()=>removeFilms([archiveApp.detailId]),'Remove film'));
   archiveUi.changePoster.addEventListener('click',openArtworkPicker);archiveUi.artworkSearchForm.addEventListener('submit',event=>{event.preventDefault();void searchArtwork();});archiveUi.artworkCandidates.addEventListener('click',event=>{const candidate=event.target.closest('[data-artwork-candidate]');if(candidate)useArtwork(archiveApp.artworkCandidates[Number(candidate.dataset.artworkCandidate)]);});archiveUi.usePosterUrl.addEventListener('click',()=>useArtwork({posterUrl:archiveUi.posterUrl.value,source:'Your image URL'}));archiveUi.posterUpload.addEventListener('change',()=>{void uploadPoster(archiveUi.posterUpload.files[0]);});archiveUi.removePoster.addEventListener('click',()=>{const id=archiveApp.artworkId;mutateFilms([id],film=>{film.posterUrl='';film.posterSource='';film.posterSourceUrl='';film.posterOverview='';},'Poster reset.');archiveApp.artwork.delete(`${archiveApp.archive.settings.provider}:${id}`);archiveApp.posterStatus.delete(id);closeOverlay(archiveUi.artworkDialog);queueArtwork(id,true);});
@@ -3062,10 +3186,10 @@ async function initializeArchive() {
   },{passive:true});
   if(document.hidden)pauseScheduler();
   const loaded=await ArchiveStorage.load();archiveApp.archive=loaded.archive;
-  try{const view=JSON.parse(localStorage.getItem('HOLLOW_KINGDOM_VIEW_V2')||'null');if(view&&typeof view==='object'){if(['posters','list','notes'].includes(view.view))archiveApp.view=view.view;if(['all','unwatched','watched','favorites','rated','noted'].includes(view.filter))archiveApp.filter=view.filter;if(['source','title','newest','oldest','rating','unwatched','recent','watchedNewest','watchedOldest'].includes(view.sort))archiveApp.sort=view.sort;if(typeof view.query==='string')archiveApp.query=view.query;if(typeof view.genre==='string')archiveApp.genre=view.genre;archiveApp.grouping=view.grouping===true;}}catch{/* Invalid view preferences do not affect the film archive. */}
+  try{const view=JSON.parse(localStorage.getItem(ArchiveStorage.scopedKey('HOLLOW_KINGDOM_VIEW_V2'))||'null');if(view&&typeof view==='object'){if(['posters','list','notes'].includes(view.view))archiveApp.view=view.view;if(['all','unwatched','watched','favorites','rated','noted'].includes(view.filter))archiveApp.filter=view.filter;if(['source','title','newest','oldest','rating','unwatched','recent','watchedNewest','watchedOldest'].includes(view.sort))archiveApp.sort=view.sort;if(typeof view.query==='string')archiveApp.query=view.query;if(typeof view.genre==='string')archiveApp.genre=view.genre;archiveApp.grouping=view.grouping===true;}}catch{/* Invalid view preferences do not affect the film archive. */}
   for(const cached of loaded.artwork)if(cached&&typeof cached.key==='string'&&Number.isFinite(cached.fetchedAt)&&(!cached.match||LedgerCore.safeImageUrl(cached.match.posterUrl)))archiveApp.artwork.set(cached.key,cached);
   if(loaded.error){archiveUi.persistenceNotice.textContent=loaded.error;archiveUi.persistenceNotice.hidden=false;archiveApp.saveError=true;archiveUi.saveIndicator.textContent='Session only · export a backup';}
-  try{const pending=JSON.parse(localStorage.getItem('HOLLOW_KINGDOM_PENDING_NOTE')||'null');const collection=archiveApp.archive.collections.find(item=>item.id===pending?.collectionId);const film=collection?.films.find(item=>item.id===pending?.filmId);if(film&&typeof pending.note==='string'){film.note=pending.note;void persistArchive();}}catch{/* A damaged optional recovery journal does not replace archive contents. */}
+  try{const pending=JSON.parse(localStorage.getItem(ArchiveStorage.scopedKey('HOLLOW_KINGDOM_PENDING_NOTE'))||'null');const collection=archiveApp.archive.collections.find(item=>item.id===pending?.collectionId);const film=collection?.films.find(item=>item.id===pending?.filmId);if(film&&typeof pending.note==='string'){film.note=pending.note;void persistArchive();}}catch{/* A damaged optional recovery journal does not replace archive contents. */}
   archiveApp.loaded=true;renderArchive(true);
 }
 
@@ -3093,7 +3217,7 @@ LedgerCore.filmMatches=(film,options={})=>{
   return LedgerCore.normalize(options.query||'').split(' ').filter(Boolean).every(term=>text.includes(term));
 };
 
-persistView=()=>{realmBase.persistView();try{localStorage.setItem('HOLLOW_KINGDOM_LENS_V3',JSON.stringify(currentRealmFilters()));}catch{/* Optional view state never blocks the archive. */}};
+persistView=()=>{realmBase.persistView();const view={...currentRealmFilters(),grouping:archiveApp.grouping===true};try{localStorage.setItem(ArchiveStorage.scopedKey('HOLLOW_KINGDOM_LENS_V3'),JSON.stringify(view));}catch{/* Optional view state never blocks the archive. */}archiveApp.archive.viewState=view;clearTimeout(archiveApp.viewTimer);archiveApp.viewTimer=setTimeout(()=>{archiveApp.viewTimer=null;void persistArchive();},500);};
 resetFilters=()=>{archiveApp.runtimeMax=null;archiveApp.yearMin=null;archiveApp.yearMax=null;archiveApp.language='';archiveApp.lens=null;realmBase.resetFilters();};
 
 persistArchive=()=>realmBase.persistArchive().then(async()=>{
@@ -3127,7 +3251,7 @@ paintChronicle=(reset=false)=>{realmBase.paintChronicle(reset);const film=active
   if(reset){archiveUi.journeyStatus.value=film.watchStatus;archiveUi.journeyQueue.value=film.queue;archiveUi.journeyPosition.value=String(film.positionMinutes||0);archiveUi.journeySnooze.value=film.snoozedUntil?dateInputValue(new Date(film.snoozedUntil)).slice(0,10):'';archiveUi.viewingDate.value=dateInputValue();archiveUi.viewingUnknown.checked=false;archiveUi.viewingEdition.value='';archiveUi.viewingCompanions.value='';archiveUi.viewingNote.value='';archiveUi.noteAiLock.checked=film.privateNote;archiveUi.editRuntime.value=film.runtime||'';archiveUi.editDirector.value=film.director;archiveUi.editLanguages.value=film.languages.join(', ');archiveUi.editCountries.value=film.countries.join(', ');archiveUi.editSections.value=film.sections.join(', ');archiveUi.editTags.value=film.tags.join(', ');}
   archiveUi.metadataProvenance.textContent=film.metadata?.provider?`Metadata: ${film.metadata.provider} · checked ${formatDate(film.metadata.checkedAt)}`:'Unlisted fields remain unknown until entered or verified.';
   const region=film.availability?.[archiveApp.archive.preferences.region];archiveUi.filmAvailability.hidden=!region;
-  archiveUi.filmAvailability.replaceChildren();if(region){archiveUi.filmAvailability.append(createNode('h4','',`Where to watch · ${archiveApp.archive.preferences.region}`));for(const [key,label]of[['flatrate','Subscription'],['rent','Rent'],['buy','Buy'],['free','Free'],['ads','With ads']]){const providers=Array.isArray(region[key])?region[key].map(item=>typeof item.provider_name==='string'?item.provider_name:'').filter(Boolean):[];if(providers.length)archiveUi.filmAvailability.append(createNode('p','quiet',`${label}: ${providers.join(', ')}`));}const url=LedgerCore.safeSourceUrl(region.link);if(url){const link=createNode('a','text-link','Check current availability ↗');link.href=url;link.target='_blank';link.rel='noopener noreferrer';archiveUi.filmAvailability.append(link);}archiveUi.filmAvailability.append(createNode('p','quiet',`Availability via TMDB / JustWatch · checked ${formatDate(film.metadata?.checkedAt)}. No prices are inferred.`));}
+  archiveUi.filmAvailability.replaceChildren();if(region){archiveUi.filmAvailability.append(createNode('h4','',`Where to watch · ${archiveApp.archive.preferences.region}`));for(const [key,label]of[['flatrate','Subscription'],['rent','Rent'],['buy','Buy'],['free','Free'],['ads','With ads']]){const providers=Array.isArray(region[key])?region[key].map(item=>typeof item.provider_name==='string'?item.provider_name:'').filter(Boolean):[];if(providers.length)archiveUi.filmAvailability.append(createNode('p','quiet',`${label}: ${providers.join(', ')}`));}const url=LedgerCore.safeSourceUrl(region.link);if(url&&!LedgerCore.restrictedUrl(url)){const link=createNode('a','text-link','Check current availability ↗');link.href=url;link.target='_blank';link.rel='noopener noreferrer';archiveUi.filmAvailability.append(link);}archiveUi.filmAvailability.append(createNode('p','quiet',`Availability via TMDB / JustWatch · checked ${formatDate(film.metadata?.checkedAt)}. No prices are inferred.`));}
 
   archiveUi.filmHistory.replaceChildren(...[...film.watchHistory].reverse().map(event=>{const row=createNode('div','viewing-event');row.append(createNode('strong','',formatDate(event.date)),createNode('p','',[event.edition,event.companions?`With ${event.companions}`:'',event.note].filter(Boolean).join(' · ')));const remove=createButton('text-button','Remove this viewing');remove.dataset.removeViewing=event.id;row.append(remove);return row;}));if(!film.watchHistory.length)archiveUi.filmHistory.append(createNode('p','quiet','No completed viewings recorded.'));
   archiveUi.noteVersions.replaceChildren(...[...film.noteHistory].reverse().map(revision=>{const row=createNode('div','note-version');row.append(createNode('strong','',formatDate(revision.savedAt)),createNode('p','',revision.text||'(empty note)'));const restore=createButton('button compact','Restore this version');restore.dataset.restoreNote=revision.id;row.append(restore);return row;}));if(!film.noteHistory.length)archiveUi.noteVersions.append(createNode('p','quiet','Earlier note versions will appear after edits.'));
@@ -3156,7 +3280,7 @@ saveFilmDetails=()=>{flushChronicle();const film=activeFilm(archiveApp.detailId)
 };
 
 openSettings=()=>{realmBase.openSettings();archiveUi.settingEffects.value=archiveApp.archive.settings.effects||'full';archiveUi.preferredLanguages.value=archiveApp.archive.preferences.languages.join(', ');archiveUi.excludedKeywords.value=archiveApp.archive.preferences.excludedKeywords.join(', ');archiveUi.watchRegion.value=archiveApp.archive.preferences.region;populateGithubSyncFields();populateGithubGistSyncFields();};
-saveSettings=()=>{archiveApp.archive.settings.effects=archiveUi.settingEffects.value;archiveApp.archive.preferences.languages=commaValues(archiveUi.preferredLanguages.value);archiveApp.archive.preferences.excludedKeywords=commaValues(archiveUi.excludedKeywords.value);archiveApp.archive.preferences.region=/^[A-Za-z]{2}$/.test(archiveUi.watchRegion.value.trim())?archiveUi.watchRegion.value.trim().toUpperCase():'US';saveGithubSyncSettings();saveGithubGistSyncSettings();realmBase.saveSettings();};
+saveSettings=()=>{archiveApp.archive.settings.effects=archiveUi.settingEffects.value;archiveApp.archive.preferences.languages=commaValues(archiveUi.preferredLanguages.value);archiveApp.archive.preferences.excludedKeywords=commaValues(archiveUi.excludedKeywords.value);archiveApp.archive.preferences.region=/^[A-Za-z]{2}$/.test(archiveUi.watchRegion.value.trim())?archiveUi.watchRegion.value.trim().toUpperCase():'US';if(window.NightreelSync?.allowsGuestSync()){saveGithubSyncSettings();saveGithubGistSyncSettings();}realmBase.saveSettings();};
 
 function githubSyncStatusLine(){
   const status=GitHubRepoSync.status();const config=GitHubRepoSync.config();
@@ -3214,10 +3338,12 @@ function saveGithubGistSyncSettings(){
   if(GitHubGistSync.hasToken()&&!wasConfigured)void githubGistSyncPullAndApply(true);
 }
 async function githubSyncPullAndApply({announce=false}={}){
-  if(!GitHubRepoSync.configured())return;
+  if(!window.NightreelSync?.allowsGuestSync() || !GitHubRepoSync.configured())return;
+  const scopeToken=window.NightreelSync.scopeToken();
   GitHubRepoSync.status().state='syncing';renderGithubSyncStatus();
   try{
     const file=await GitHubRepoSync.pull();
+    if(scopeToken!==window.NightreelSync.scopeToken())return;
     if(file.notFound){GitHubRepoSync.status().state='idle';GitHubRepoSync.status().lastError='';renderGithubSyncStatus();if(announce)showMessage('No file found yet at that path — it will be created on the next save.');return;}
     const incoming=LedgerCore.parseMovieText(file.text,{detectGenres:true}).films;
     let collection=archiveApp.archive.collections.find(item=>item.id===GitHubRepoSync.config().collectionId);
@@ -3237,17 +3363,19 @@ async function githubSyncPullAndApply({announce=false}={}){
   }
 }
 function scheduleGithubPush(){
-  if(!GitHubRepoSync.configured()||GitHubRepoSync.isPaused()||!GitHubRepoSync.hasToken())return;
+  if(!window.NightreelSync?.allowsGuestSync()||!GitHubRepoSync.configured()||GitHubRepoSync.isPaused()||!GitHubRepoSync.hasToken())return;
   const collection=archiveApp.archive.collections.find(item=>item.id===GitHubRepoSync.config().collectionId);
   if(!collection)return;
   GitHubRepoSync.schedulePush(()=>LedgerCore.exportMarkdown(collection));
   watchGithubPushStatus();
 }
 async function githubGistSyncPullAndApply(announce=false){
-  if(!GitHubGistSync.configured()||GitHubGistSync.isPaused())return;
+  if(!window.NightreelSync?.allowsGuestSync()||!GitHubGistSync.configured()||GitHubGistSync.isPaused())return;
+  const scopeToken=window.NightreelSync.scopeToken();
   GitHubGistSync.status().state='syncing';renderGithubGistSyncStatus();
   try{
     const file=await GitHubGistSync.pull();
+    if(scopeToken!==window.NightreelSync.scopeToken())return;
     if(file.notFound){GitHubGistSync.status().state='idle';GitHubGistSync.status().lastError='';renderGithubGistSyncStatus();if(announce)showMessage('No gist content found yet — it will be created on the next save.');return;}
     const incoming=LedgerCore.parseMovieText(file.text,{detectGenres:true}).films;
     let collection=archiveApp.archive.collections.find(item=>item.id===GitHubGistSync.config().collectionId);
@@ -3267,7 +3395,7 @@ async function githubGistSyncPullAndApply(announce=false){
   }
 }
 function scheduleGithubGistPush(){
-  if(!GitHubGistSync.configured()||GitHubGistSync.isPaused()||!GitHubGistSync.hasToken())return;
+  if(!window.NightreelSync?.allowsGuestSync()||!GitHubGistSync.configured()||GitHubGistSync.isPaused()||!GitHubGistSync.hasToken())return;
   const collection=archiveApp.archive.collections.find(item=>item.id===GitHubGistSync.config().collectionId)||activeCollection();
   if(!collection)return;
   GitHubGistSync.schedulePush(()=>LedgerCore.exportMarkdown(collection));
@@ -3385,7 +3513,7 @@ async function lookupMetadataBatch(){const generation=++realmState.scribeGenerat
 function acceptMetadata(id,index){const match=realmState.metadata.get(id)?.[index];if(!match)return;mutateFilms([id],film=>{if(match.runtime)film.runtime=match.runtime;if(match.director)film.director=match.director;if(match.languages?.length)film.languages=match.languages;if(match.countries?.length)film.countries=match.countries;if(!film.yearLabel&&match.year){film.year=match.year;film.yearLabel=String(match.year);}if(archiveUi.scribeApplyGenres.checked&&match.genres?.length)film.genres=[...new Set([...film.genres,...match.genres])];if(match.posterUrl&&!film.posterUrl){film.posterUrl=match.posterUrl;film.posterSource=match.provider;film.posterSourceUrl=match.sourceUrl;film.posterOverview=match.overview||'';}film.mediaType=match.mediaType==='tv'?'tv':'movie';film.metadata={provider:match.provider||'Verified source',sourceUrl:match.metadataSourceUrl||match.sourceUrl,checkedAt:match.checkedAt||new Date().toISOString(),externalId:String(match.externalId||'')};if(match.availability)film.availability=match.availability;},'Verified metadata applied. Notes and ratings preserved.');renderScribe();}
 
 async function openRecovery(){openOverlay(archiveUi.recoveryDialog,archiveUi.saveCheckpoint);await renderRecovery();}
-async function renderRecovery(){try{const checkpoints=await ArchiveStorage.checkpoints();archiveUi.checkpointList.replaceChildren(...checkpoints.map(checkpoint=>{const row=createNode('div','checkpoint-row');const body=createNode('div');body.append(createNode('strong','',formatDate(checkpoint.createdAt)),createNode('p','',`${checkpoint.label} · ${checkpoint.archive.collections.length} collections · ${checkpoint.archive.collections.reduce((sum,collection)=>sum+collection.films.length,0)} films`));const restore=createButton('text-button','Restore');restore.dataset.restoreCheckpoint=checkpoint.key;row.append(body,restore);return row;}));setFormStatus(archiveUi.recoveryStatus,checkpoints.length?`${checkpoints.length} checkpoints retained. Recent checkpoints are retained automatically; export backups for long-term copies.`:'No checkpoints yet. Create one now; automatic checkpoints are added after meaningful changes.');}catch(error){setFormStatus(archiveUi.recoveryStatus,error.message,true);}}
+async function renderRecovery(){const scopeToken=window.NightreelSync?.scopeToken();try{const checkpoints=await ArchiveStorage.checkpoints();if(scopeToken!==window.NightreelSync?.scopeToken())return;archiveUi.checkpointList.replaceChildren(...checkpoints.map(checkpoint=>{const row=createNode('div','checkpoint-row');const body=createNode('div');body.append(createNode('strong','',formatDate(checkpoint.createdAt)),createNode('p','',`${checkpoint.label} · ${checkpoint.archive.collections.length} collections · ${checkpoint.archive.collections.reduce((sum,collection)=>sum+collection.films.length,0)} films`));const restore=createButton('text-button','Restore');restore.dataset.restoreCheckpoint=checkpoint.key;row.append(body,restore);return row;}));setFormStatus(archiveUi.recoveryStatus,checkpoints.length?`${checkpoints.length} checkpoints retained. Recent checkpoints are retained automatically; export backups for long-term copies.`:'No checkpoints yet. Create one now; automatic checkpoints are added after meaningful changes.');}catch(error){setFormStatus(archiveUi.recoveryStatus,error.message,true);}}
 
 function openAssistant(mode='search',request=''){realmState.aiRevision++;if(!requireCollection())return;archiveUi.assistantMode.value=mode;if(request)archiveUi.assistantRequest.value=request;archiveUi.aiEndpoint.value=archiveUi.aiEndpoint.value||'http://127.0.0.1:8787';archiveUi.applyAiFilters.hidden=true;openOverlay(archiveUi.assistantDialog,archiveUi.assistantRequest);}
 function assistantCard(film,reason='',tradeoff='',quote=''){const card=createNode('article','assistant-result-card');card.append(createNode('h3','',film.title),createNode('p','quiet',[film.yearLabel,film.runtime?`${film.runtime} min`:null,film.director].filter(Boolean).join(' · ')));if(reason)card.append(createNode('p','',reason));if(tradeoff)card.append(createNode('p','quiet',tradeoff));if(quote)card.append(createNode('blockquote','assistant-quote',quote));const open=createButton('text-button','Open source film / chronicle ↗');open.dataset.assistantOpen=film.id;const queue=createButton('text-button','Queue tonight');queue.dataset.assistantQueue=film.id;card.append(open,queue);return card;}
@@ -3427,7 +3555,7 @@ function bindRealmEvents(){
   archiveUi.atlasMissingGenresChips.addEventListener('click',event=>{const chip=event.target.closest('[data-missing-genre]');if(!chip)return;realmState.pendingGapGenre=chip.dataset.missingGenre;closeOverlay(archiveUi.atlasDialog,()=>archiveUi.openStudio.click());});
   archiveUi.openAtlas.addEventListener('click',openAtlas);archiveUi.atlasDimension.addEventListener('change',renderAtlas);archiveUi.atlasSort.addEventListener('change',renderAtlas);archiveUi.atlasRows.addEventListener('click',event=>{const control=event.target.closest('button');if(!control)return;if(control.dataset.atlasLabel){archiveApp.lens={dimension:control.dataset.atlasDimension,label:control.dataset.atlasLabel};archiveApp.genre='';archiveApp.query='';archiveApp.filter='all';persistView();renderArchive(true);closeOverlay(archiveUi.atlasDialog);}else if(control.dataset.atlasCouncil){const dimension=control.dataset.atlasDimension;const label=control.dataset.atlasCouncil;closeOverlay(archiveUi.atlasDialog,()=>{openCouncil();if(dimension==='genres')archiveUi.councilGenre.value=label;else{const candidates=KingdomDomain.rank(activeCollection().films.filter(film=>KingdomDomain.valuesFor(film,dimension).includes(label)),{goal:'explore'},archiveApp.archive.feedback).slice(0,3);realmState.councilChoices=candidates;archiveUi.councilChoices.replaceChildren(...candidates.map(item=>choiceCard(item,{})));setFormStatus(archiveUi.councilStatus,`Choices from ${label}.`);return;}archiveUi.councilGoal.value='explore';drawCouncil();});}});
   archiveUi.openCouncil.addEventListener('click',openCouncil);archiveUi.drawCouncil.addEventListener('click',drawCouncil);archiveUi.makePath.addEventListener('click',createPath);archiveUi.aiCouncil.addEventListener('click',()=>closeOverlay(archiveUi.councilDialog,()=>openAssistant('compare','Help me choose between the Council films using my recorded preferences.')));archiveUi.councilChoices.addEventListener('click',event=>{const control=event.target.closest('button');if(!control)return;if(control.dataset.councilOpen)openFilmFrom(archiveUi.councilDialog,control.dataset.councilOpen);if(control.dataset.councilQueue)mutateFilms([control.dataset.councilQueue],film=>{film.queue='tonight';film.queueOrder=Date.now();},'Queued for tonight.');if(control.dataset.feedbackFilm)recordFeedback(control.dataset.feedbackFilm,control.dataset.feedbackAction);if(control.dataset.councilRepair){archiveUi.scribeFilter.value='runtime';closeOverlay(archiveUi.councilDialog,openScribe);}});archiveUi.viewingPath.addEventListener('click',event=>{const control=event.target.closest('button');if(!control)return;if(control.dataset.councilOpen)openFilmFrom(archiveUi.councilDialog,control.dataset.councilOpen);if(control.dataset.savePath){const name=document.getElementById('path-name').value.trim()||'A viewing path';if(archiveApp.archive.paths.length>=100){showMessage('The saved viewing-path limit is 100. Remove one before saving another.');return;}archiveApp.archive.paths.push({id:LedgerCore.newId('path'),name,collectionId:activeCollection().id,filmIds:realmState.path.map(item=>item.film.id),createdAt:new Date().toISOString()});void persistArchive();showMessage('Viewing path saved to your queue.');}});
-  archiveUi.councilProfiles.addEventListener('change',event=>{const id=event.target.dataset.profileId;if(!id)return;if(event.target.checked)realmState.selectedProfiles.add(id);else realmState.selectedProfiles.delete(id);drawCouncil();});archiveUi.saveProfile.addEventListener('click',()=>{const name=archiveUi.profileName.value.trim();if(!name){showMessage('Give the profile a name.');return;}if(archiveApp.archive.profiles.length>=50){showMessage('The profile limit is 50. Remove one before adding another.');return;}archiveApp.archive.profiles.push({id:LedgerCore.newId('person'),name,languages:commaValues(archiveUi.profileLanguages.value),vetoes:commaValues(archiveUi.profileVetoes.value)});void persistArchive();renderProfiles();archiveUi.profileName.value='';showMessage('Local viewing profile saved.');});
+  archiveUi.councilProfiles.addEventListener('change',event=>{const id=event.target.dataset.profileId;if(!id)return;if(event.target.checked)realmState.selectedProfiles.add(id);else realmState.selectedProfiles.delete(id);drawCouncil();});archiveUi.saveProfile.addEventListener('click',()=>{const name=archiveUi.profileName.value.trim();if(!name){showMessage('Give the profile a name.');return;}if(archiveApp.archive.profiles.length>=50){showMessage('The profile limit is 50. Remove one before adding another.');return;}archiveApp.archive.profiles.push({id:LedgerCore.newId('person'),name,languages:commaValues(archiveUi.profileLanguages.value),vetoes:commaValues(archiveUi.profileVetoes.value)});void persistArchive();renderProfiles();archiveUi.profileName.value='';showMessage('Viewing profile saved.');});
   archiveUi.openQueue.addEventListener('click',openQueue);archiveUi.queueTabs.addEventListener('click',event=>{const control=event.target.closest('[data-queue-tab]');if(control){realmState.queueTab=control.dataset.queueTab;renderQueue();}});archiveUi.queueFilms.addEventListener('change',event=>{const id=event.target.dataset.moveQueue;if(id)mutateFilms([id],film=>{film.queue=event.target.value;film.queueOrder=Date.now();},'Queue updated.');});archiveUi.queueFilms.addEventListener('click',event=>{const control=event.target.closest('button');if(!control)return;const id=control.dataset.queueFilm;if(control.dataset.queueAction==='open'){openFilmFrom(archiveUi.queueDialog,id);return;}if(control.dataset.queueAction){const film=activeFilm(id);const rows=[...archiveUi.queueFilms.querySelectorAll('[data-queue-action="open"]')];const position=rows.findIndex(button=>button.dataset.queueFilm===id);const other=activeFilm(rows[position+(control.dataset.queueAction==='up'?-1:1)]?.dataset.queueFilm);if(film&&other){const order=film.queueOrder;const otherOrder=other.queueOrder;mutateFilms([film.id,other.id],current=>{current.queueOrder=current.id===film.id?otherOrder+(control.dataset.queueAction==='up'?-1:1):order;},'Queue reordered.',{silent:true});}}if(control.dataset.reconsiderFilm)mutateFilms([control.dataset.reconsiderFilm],film=>{film.snoozedUntil=null;if(film.watchStatus==='notInterested')film.watchStatus=film.watched?'watched':'unwatched';},'Film returned to consideration.');});archiveUi.savedPaths.addEventListener('click',event=>{const control=event.target.closest('button');if(!control)return;if(control.dataset.pathNext){const collectionId=control.dataset.pathCollection;if(archiveApp.archive.collections.some(item=>item.id===collectionId)&&archiveApp.archive.activeId!==collectionId)chooseCollection(collectionId);openFilmFrom(archiveUi.queueDialog,control.dataset.pathNext);}if(control.dataset.removePath){archiveApp.archive.paths=archiveApp.archive.paths.filter(path=>path.id!==control.dataset.removePath);void persistArchive();renderQueue();}});
   archiveUi.filmContent.addEventListener('click',event=>{const control=event.target.closest('[data-realm-queue]');if(control)mutateFilms([control.dataset.realmQueue],film=>{film.queue=film.queue==='tonight'?'none':'tonight';film.queueOrder=Date.now();},'Tonight queue updated.');});archiveUi.clearLens.addEventListener('click',resetFilters);
   archiveUi.saveJourney.addEventListener('click',()=>{const film=activeFilm(archiveApp.detailId);if(!film)return;const status=archiveUi.journeyStatus.value;if(status==='unwatched'&&film.watched){toggleWatched(film.id);return;}if(status==='watched'&&!film.watched){setRealmWatched(film.id,true);}else mutateFilms([film.id],current=>{current.watchStatus=status;current.queue=archiveUi.journeyQueue.value;current.positionMinutes=Math.max(0,Number(archiveUi.journeyPosition.value)||0);current.snoozedUntil=archiveUi.journeySnooze.value?new Date(archiveUi.journeySnooze.value+'T09:00:00').toISOString():null;},'Journey state saved.');paintChronicle(true);});
@@ -3437,27 +3565,8 @@ function bindRealmEvents(){
   archiveUi.openViews.addEventListener('click',openViews);archiveUi.applyAdvancedFilters.addEventListener('click',()=>{const filters=KingdomDomain.sanitizeFilters({runtimeMax:archiveUi.filterRuntime.value,yearMin:archiveUi.filterYearMin.value,yearMax:archiveUi.filterYearMax.value,language:archiveUi.filterLanguage.value});applyFilters({...currentRealmFilters(),runtimeMax:null,yearMin:null,yearMax:null,language:'',...filters});closeOverlay(archiveUi.viewsDialog);});archiveUi.saveCurrentView.addEventListener('click',()=>{const name=archiveUi.savedViewName.value.trim();if(!name){showMessage('Name this saved search first.');return;}if(archiveApp.archive.savedViews.length>=200){showMessage('The saved-search limit is 200. Delete one before saving another.');return;}archiveApp.archive.savedViews.push({id:LedgerCore.newId('view'),name,filters:currentRealmFilters()});void persistArchive();renderSavedViews();archiveUi.savedViewName.value='';});archiveUi.savedViewsList.addEventListener('click',event=>{const control=event.target.closest('button');if(!control)return;if(control.dataset.loadView){const view=archiveApp.archive.savedViews.find(item=>item.id===control.dataset.loadView);if(view){applyFilters(view.filters);closeOverlay(archiveUi.viewsDialog);}}if(control.dataset.deleteView){archiveApp.archive.savedViews=archiveApp.archive.savedViews.filter(view=>view.id!==control.dataset.deleteView);void persistArchive();renderSavedViews();}});
   archiveUi.openScribe.addEventListener('click',openScribe);archiveUi.scribeFilter.addEventListener('change',()=>{realmState.scribeLimit=12;renderScribe();});archiveUi.scribeMore.addEventListener('click',()=>{realmState.scribeLimit+=12;renderScribe();});archiveUi.lookupScribe.addEventListener('click',()=>{void lookupMetadataBatch();});archiveUi.cancelScribe.addEventListener('click',()=>{realmState.scribeGeneration++;MetadataDesk.cancel();ArtworkLookup.cancel();archiveUi.lookupScribe.disabled=false;setFormStatus(archiveUi.scribeStatus,'Lookups stopped. Existing records are unchanged.');});archiveUi.scribeRows.addEventListener('click',event=>{const control=event.target.closest('button');if(!control)return;if(control.dataset.scribeOpen)openFilmFrom(archiveUi.scribeDialog,control.dataset.scribeOpen);if(control.dataset.lookupFilm){setFormStatus(archiveUi.scribeStatus,'Looking up verified records…');void lookupOneMetadata(control.dataset.lookupFilm).then(()=>setFormStatus(archiveUi.scribeStatus,'Review available matches below.'));}if(control.dataset.acceptMetadataFilm)acceptMetadata(control.dataset.acceptMetadataFilm,Number(control.dataset.acceptMetadataIndex));});
   archiveUi.openAssistant.addEventListener('click',()=>openAssistant());archiveUi.runLocalAssistant.addEventListener('click',renderLocalAssistant);archiveUi.runConnectedAi.addEventListener('click',()=>{void runConnectedAI();});archiveUi.cancelAi.addEventListener('click',()=>ArchiveAI.cancel());archiveUi.connectAi.addEventListener('click',()=>{void connectAI();});archiveUi.aiConnectionStatus.addEventListener('click',event=>{if(event.target.closest('[data-retry-connect-ai]'))void connectAI();});archiveUi.previewAiRequest.addEventListener('click',()=>{try{const payload=buildAIRequest();archiveUi.aiPayloadPreview.textContent=JSON.stringify(payload,null,2);archiveUi.aiPayloadPreview.hidden=false;}catch(error){setFormStatus(archiveUi.assistantStatus,error.message,true);}});archiveUi.applyAiFilters.addEventListener('click',()=>{if(realmState.assistantFilters){applyFilters(realmState.assistantFilters);closeOverlay(archiveUi.assistantDialog);}});archiveUi.assistantResults.addEventListener('click',event=>{const control=event.target.closest('button');if(!control)return;if(control.dataset.assistantOpen)openFilmFrom(archiveUi.assistantDialog,control.dataset.assistantOpen);if(control.dataset.assistantQueue)mutateFilms([control.dataset.assistantQueue],film=>{film.queue='tonight';},'Queued for tonight.');if(control.dataset.assistantScribe)closeOverlay(archiveUi.assistantDialog,openScribe);if(control.dataset.aiPatch){try{reviewAIPatch(JSON.parse(control.dataset.aiPatch));}catch(error){setFormStatus(archiveUi.assistantStatus,error.message,true);}}});
-  archiveUi.openRecovery.addEventListener('click',()=>{void openRecovery();});archiveUi.saveCheckpoint.addEventListener('click',()=>{void ArchiveStorage.checkpoint(archiveApp.archive,'Manual recovery point').then(renderRecovery).catch(error=>setFormStatus(archiveUi.recoveryStatus,error.message,true));});archiveUi.checkpointList.addEventListener('click',event=>{const control=event.target.closest('[data-restore-checkpoint]');if(!control)return;void ArchiveStorage.checkpoints().then(checkpoints=>{const checkpoint=checkpoints.find(item=>item.key===control.dataset.restoreCheckpoint);if(!checkpoint)return;confirmAction('Restore this checkpoint?',`Return to ${formatDate(checkpoint.createdAt)}. You can undo this restore.`,()=>{pushHistory({kind:'archive',before:structuredClone(archiveApp.archive),label:'Restored checkpoint'});archiveApp.archive=LedgerCore.validateArchive(checkpoint.archive);ArchiveStorage.allowRestore();archiveApp.selected.clear();resetFilters();void persistArchive();renderArchive(true);showMessage('Checkpoint restored.',true);},'Restore checkpoint');}).catch(error=>setFormStatus(archiveUi.recoveryStatus,error.message,true));});
-  // Cloud sync button in settings
-  const nrCloudBtn = document.getElementById('nr-open-cloud-sync');
-  if(nrCloudBtn) nrCloudBtn.addEventListener('click', () => {
-    if(typeof window.NightreelFirestore !== 'undefined') window.NightreelFirestore.openDialog();
-  });
-  // Update Firestore status line when settings dialog opens
-  const origOpenSettings = window.openSettings;
-  if(origOpenSettings) window.openSettings = function() {
-    const r = origOpenSettings.apply(this, arguments);
-    setTimeout(() => {
-      const statusEl = document.getElementById('nr-firestore-status');
-      if(!statusEl) return;
-      const nrf = window.NightreelFirestore;
-      if(!nrf) { statusEl.textContent = 'Not configured.'; return; }
-      if(!nrf.isSignedIn()) { statusEl.textContent = 'Not signed in.'; return; }
-      const user = nrf.getUser();
-      statusEl.textContent = user ? `Signed in as ${user.email || user.displayName || 'unknown'}` : 'Not signed in.';
-    }, 50);
-    return r;
-  };
+  archiveUi.openRecovery.addEventListener('click',()=>{void openRecovery();});archiveUi.saveCheckpoint.addEventListener('click',()=>{void ArchiveStorage.checkpoint(archiveApp.archive,'Manual recovery point').then(renderRecovery).catch(error=>setFormStatus(archiveUi.recoveryStatus,error.message,true));});archiveUi.checkpointList.addEventListener('click',event=>{const control=event.target.closest('[data-restore-checkpoint]');if(!control)return;void ArchiveStorage.checkpoints().then(checkpoints=>{const checkpoint=checkpoints.find(item=>item.key===control.dataset.restoreCheckpoint);if(!checkpoint)return;confirmAction('Restore this checkpoint?',`Return to ${formatDate(checkpoint.createdAt)}. You can undo this restore.`,()=>{pushHistory({kind:'archive',before:structuredClone(archiveApp.archive),label:'Restored checkpoint'});archiveApp.archive=LedgerCore.validateArchive(checkpoint.archive);window.NightreelCloud?.useArchive();ArchiveStorage.allowRestore();archiveApp.selected.clear();applyArchiveView();void persistArchive();renderArchive(true);showMessage('Checkpoint restored.',true);},'Restore checkpoint');}).catch(error=>setFormStatus(archiveUi.recoveryStatus,error.message,true));});
+  document.getElementById('nr-open-cloud-sync')?.addEventListener('click', () => window.NightreelSync?.openDialog());
 }
 
 
@@ -3468,6 +3577,7 @@ function bindRealmEvents(){
  * This runs at most once per bridge session (guarded by sessionStorage flag).
  */
 async function autoImportAdjacentFiles(){
+  const scopeToken=window.NightreelSync?.scopeToken();
   const FLAG_KEY='HOLLOW_KINGDOM_AUTO_IMPORT_V1';
   // Collect source names already in the archive so we do not re-import them.
   const knownSources=new Set(
@@ -3479,7 +3589,7 @@ async function autoImportAdjacentFiles(){
   const alreadyHandled=new Set([...knownSources,...imported]);
   let files;
   try{files=await ArchiveAI.fetchAdjacentFiles(alreadyHandled);}catch{return;}
-  if(!files.length)return;
+  if(!files.length || scopeToken!==window.NightreelSync?.scopeToken())return;
   let totalAdded=0;const names=[];
   for(const {name,text} of files){
     try{
@@ -3499,12 +3609,8 @@ async function autoImportAdjacentFiles(){
   showMessage(`Auto-imported ${totalAdded.toLocaleString()} films from ${names.join(', ')}.`,true);
 }
 
-async function initializeKingdom(){await realmBase.initializeArchive();archiveApp.archive=KingdomDomain.upgradeArchive(archiveApp.archive,archiveApp.archive);try{const stored=JSON.parse(localStorage.getItem('HOLLOW_KINGDOM_LENS_V3')||'null');if(stored)Object.assign(archiveApp,KingdomDomain.sanitizeFilters(stored));}catch{/* Damaged optional filters leave the underlying archive intact. */}
-  let staticImportResult=null;
-  try{staticImportResult=await GitHubPagesStaticImport.tryImport();}catch{/* No movies.md reachable at any candidate name/branch; the welcome screen covers this case. */}
+async function initializeKingdom(){await realmBase.initializeArchive();archiveApp.archive=KingdomDomain.upgradeArchive(archiveApp.archive,archiveApp.archive);try{const stored=JSON.parse(localStorage.getItem(ArchiveStorage.scopedKey('HOLLOW_KINGDOM_LENS_V3'))||'null');if(stored)Object.assign(archiveApp,KingdomDomain.sanitizeFilters(stored));}catch{/* Damaged optional filters leave the underlying archive intact. */}
   realmState.ready=true;bindRealmEvents();renderArchive(true);
-  if(staticImportResult)showMessage(`Loaded ${staticImportResult.filmCount.toLocaleString()} films from ${staticImportResult.name}.`,true);
-  if(GitHubRepoSync.configured()&&!GitHubRepoSync.isPaused())void githubSyncPullAndApply();if(GitHubGistSync.configured()&&!GitHubGistSync.isPaused())void githubGistSyncPullAndApply();
   if(typeof location!=='undefined'&&['http:','https:'].includes(location.protocol)){
     // Hash token from bridge launch URL takes priority; sessionStorage fallback restores across reloads.
     const fragment=new URLSearchParams(location.hash.slice(1));const code=fragment.get('bridge-token');
@@ -3516,7 +3622,7 @@ async function initializeKingdom(){await realmBase.initializeArchive();archiveAp
     } else if(ArchiveAI.restoreFromSession()){
       // Restore field values from session so the UI reflects the active connection.
       try{
-        const raw=JSON.parse(sessionStorage.getItem('HOLLOW_KINGDOM_BRIDGE_V1')||'null');
+        const raw=JSON.parse(sessionStorage.getItem(ArchiveStorage.scopedKey('HOLLOW_KINGDOM_BRIDGE_V1'))||'null');
         if(raw){archiveUi.aiEndpoint.value=raw.endpoint||'';archiveUi.aiAccessCode.value=raw.accessCode||'';}
       } catch { /* blocked */ }
       bridgeConnected=true;
@@ -3529,7 +3635,7 @@ async function initializeKingdom(){await realmBase.initializeArchive();archiveAp
     }
   }
 }
-void initializeKingdom().catch(error=>{archiveUi.persistenceNotice.textContent=`The archive could not finish loading: ${error.message}. Reload the file or restore a backup.`;archiveUi.persistenceNotice.hidden=false;});
+const appReady = initializeKingdom().catch(error=>{archiveUi.persistenceNotice.textContent=`The archive could not finish loading: ${error.message}. Reload the file or restore a backup.`;archiveUi.persistenceNotice.hidden=false;});
 
 </script>
 <script>
@@ -3760,7 +3866,8 @@ void initializeKingdom().catch(error=>{archiveUi.persistenceNotice.textContent=`
     const placeholder = posterPlaceholder(film, status?.status || '');
     mount.replaceChildren(placeholder);
     if (!match?.posterUrl) return;
-    const urls = [match.posterUrl, ...(match.fallbackUrls || [])].map(url => LedgerCore.safeImageUrl(url)).filter(Boolean);
+    const urls = [match.posterUrl, ...(match.fallbackUrls || [])].map(url => LedgerCore.safeImageUrl(url)).filter(url => url && !LedgerCore.restrictedUrl(url));
+    if (!urls.length) { const caption = placeholder.querySelector('small'); if (caption) caption.textContent = 'Image unavailable · open to change'; return; }
     let attempt = 0;
     const image = createNode('img', 'poster-image');
     image.alt = `${film.title} poster`;
@@ -3800,8 +3907,7 @@ void initializeKingdom().catch(error=>{archiveUi.persistenceNotice.textContent=`
       {id: 'ollama', label: 'Ollama (local, no key)', base: 'http://localhost:11434/v1', priority: [], noKey: true},
       {id: 'groq', label: 'Groq', base: 'https://api.groq.com/openai/v1', priority: ['llama-3.3-70b-versatile', 'llama-3.1-70b', 'llama-3.1-8b-instant', 'mixtral']},
       {id: 'cerebras', label: 'Cerebras', base: 'https://api.cerebras.ai/v1', priority: ['llama-3.3-70b', 'llama3.1-70b', 'llama3.1-8b']},
-      {id: 'openrouter', label: 'OpenRouter', base: 'https://openrouter.ai/api/v1', priority: ['openai/gpt-4o-mini', 'anthropic/claude-3.5-haiku', 'meta-llama/llama-3.1-70b-instruct', 'google/gemini-flash-1.5']},
-      {id: 'google', label: 'Google Gemini', base: 'https://generativelanguage.googleapis.com/v1beta/openai', priority: ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-pro']},
+      {id: 'openrouter', label: 'OpenRouter', base: 'https://openrouter.ai/api/v1', priority: ['openai/gpt-4o-mini', 'anthropic/claude-3.5-haiku', 'meta-llama/llama-3.1-70b-instruct']},
       {id: 'mistral', label: 'Mistral', base: 'https://api.mistral.ai/v1', priority: ['mistral-small-latest', 'open-mistral-nemo', 'mistral-large-latest']},
       {id: 'deepseek', label: 'DeepSeek', base: 'https://api.deepseek.com/v1', priority: ['deepseek-chat', 'deepseek-reasoner']},
       {id: 'together', label: 'Together AI', base: 'https://api.together.xyz/v1', priority: ['meta-llama/Llama-3.3-70B-Instruct-Turbo-Free', 'meta-llama/Llama-3.3-70B-Instruct-Turbo', 'mistralai/Mixtral-8x7B-Instruct-v0.1']},
@@ -3823,7 +3929,7 @@ void initializeKingdom().catch(error=>{archiveUi.persistenceNotice.textContent=`
     const memoryKeys = {};
 
     function loadConfig() {
-      const stored = readJson(CONFIG_KEY, {});
+      const stored = archiveApp.archive.aiSettings || (ArchiveStorage.scope() === 'guest' ? readJson(CONFIG_KEY, {}) : {});
       const profiles = {};
       for (const preset of PRESETS) {
         const saved = stored.profiles?.[preset.id] || {};
@@ -3836,23 +3942,24 @@ void initializeKingdom().catch(error=>{archiveUi.persistenceNotice.textContent=`
       }
       return {profiles, maxTitles: Math.min(600, Math.max(50, Number(stored.maxTitles) || 250))};
     }
-    const saveConfig = config => writeJson(CONFIG_KEY, config);
+    const saveConfig = config => { archiveApp.archive.aiSettings = KingdomDomain.sanitizeAISettings(config); void persistArchive(); return true; };
 
-    const readKeys = storage => { try { return JSON.parse(storage.getItem(KEY_STORE) || '{}') || {}; } catch { return {}; } };
-    const getKey = id => memoryKeys[id] || readKeys(sessionStorage)[id] || readKeys(localStorage)[id] || '';
+    const readKeys = storage => { try { return JSON.parse(storage.getItem(ArchiveStorage.scopedKey(KEY_STORE)) || '{}') || {}; } catch { return {}; } };
+    const memoryKey = id => `${ArchiveStorage.scope()}:${id}`;
+    const getKey = id => memoryKeys[memoryKey(id)] || readKeys(sessionStorage)[id] || readKeys(localStorage)[id] || '';
     function setKey(id, key, remember) {
-      delete memoryKeys[id];
+      delete memoryKeys[memoryKey(id)];
       for (const storage of [sessionStorage, localStorage]) {
         const keys = readKeys(storage);
         delete keys[id];
-        try { storage.setItem(KEY_STORE, JSON.stringify(keys)); } catch { /* Blocked storage keeps the in-memory copy only. */ }
+        try { storage.setItem(ArchiveStorage.scopedKey(KEY_STORE), JSON.stringify(keys)); } catch { /* Blocked storage keeps the in-memory copy only. */ }
       }
       if (!key) return;
-      memoryKeys[id] = key;
+      memoryKeys[memoryKey(id)] = key;
       const storage = remember ? localStorage : sessionStorage;
       const keys = readKeys(storage);
       keys[id] = key;
-      try { storage.setItem(KEY_STORE, JSON.stringify(keys)); } catch { /* Memory copy still works for this tab. */ }
+      try { storage.setItem(ArchiveStorage.scopedKey(KEY_STORE), JSON.stringify(keys)); } catch { /* Memory copy still works for this tab. */ }
     }
     const hasKey = id => !!getKey(id);
 
@@ -3860,7 +3967,7 @@ void initializeKingdom().catch(error=>{archiveUi.persistenceNotice.textContent=`
       let url;
       try { url = new URL(base); } catch { return ''; }
       const local = ['127.0.0.1', 'localhost', '[::1]'].includes(url.hostname);
-      if (url.username || url.password || url.search || url.hash) return '';
+      if (url.username || url.password || url.search || url.hash || LedgerCore.restrictedUrl(url.href)) return '';
       if (url.protocol !== 'https:' && !(url.protocol === 'http:' && local)) return '';
       return url.origin + url.pathname.replace(/\/$/, '');
     }
@@ -3915,7 +4022,7 @@ void initializeKingdom().catch(error=>{archiveUi.persistenceNotice.textContent=`
       const base = validBase(profile.base);
       const apiKey = getKey(preset.id);
       const keyExempt = preset.id === 'custom' || preset.noKey;
-      if (!profile.enabled || !profile.model || !base || (!apiKey && !keyExempt)) return null;
+      if (!profile.enabled || !profile.model || /(?:^|[\/._-])(?:google|gemini)(?:[\/._-]|$)/i.test(profile.model) || !base || (!apiKey && !keyExempt)) return null;
       return {profile: {...profile, base}, apiKey};
     }
 
@@ -4107,6 +4214,11 @@ void initializeKingdom().catch(error=>{archiveUi.persistenceNotice.textContent=`
   }
 
   const studio = {tab: 'suggest', abort: null, answer: null, replyCache: new Map(), enrich: {generation: 0, skipped: new Set(), proposals: []}};
+  window.resetNightreelStudio = () => {
+    studio.abort?.abort(); studio.abort = null; studio.answer = null; studio.replyCache.clear();
+    studio.enrich.generation++; studio.enrich.skipped.clear(); studio.enrich.proposals = [];
+    for (const id of ['st-results','st-enrich-list','st-dup-list','st-source-list','assistant-results','checkpoint-list']) $(id)?.replaceChildren();
+  };
 
   function setSuggestBusy(busy) {
     const button = $('st-generate');
@@ -4428,6 +4540,7 @@ void initializeKingdom().catch(error=>{archiveUi.persistenceNotice.textContent=`
       studio.enrich.skipped.add(film.id);
       try {
         const matches = await MetadataDesk.search(film, metadataProvider());
+        if (generation !== studio.enrich.generation) break;
         const top = matches[0];
         if (!top || LedgerCore.rankArtwork(film, {...top, posterUrl: top.posterUrl || 'metadata'}) < 95) continue;
         const changes = enrichmentChanges(film, top);
@@ -4506,20 +4619,17 @@ void initializeKingdom().catch(error=>{archiveUi.persistenceNotice.textContent=`
   /* Cloud sources: remote Markdown stays separate from local edits. Syncing only adds films and
      category labels; watch state, ratings, and notes on films you already have are never overwritten. */
   const Cloud = (() => {
-    const STORE = 'HK_CLOUD_SOURCES_V1';
     const INTERVALS = [[0, 'Manual only'], [15, 'Every 15 minutes'], [60, 'Hourly'], [360, 'Every 6 hours'], [1440, 'Daily']];
     const busy = new Set();
-    let sources = readJson(STORE, []).filter(item => item && typeof item.id === 'string' && typeof item.url === 'string').slice(0, 12);
-
-    const save = () => writeJson(STORE, sources);
+    let sources = [];
+    const useArchive = () => { sources = archiveApp.archive.cloudSources ||= []; };
+    const save = () => { archiveApp.archive.cloudSources = sources; void persistArchive(); };
     const redraw = () => { if ($('studio-dialog').open && studio.tab === 'sources') renderSources(); };
 
     const SOURCE_HELP = {
       'GitHub file': 'https://docs.github.com/en/repositories/working-with-files/using-files/viewing-and-understanding-files',
       'GitHub Gist': 'https://docs.github.com/en/get-started/writing-on-github/editing-and-sharing-content-with-gists/creating-gists',
       'Dropbox': 'https://help.dropbox.com/share/create-and-share-link',
-      'Google Drive': 'https://support.google.com/drive/answer/7166529?hl=en',
-      'Google Docs': 'https://support.google.com/docs/answer/183965?hl=en',
       'OneDrive / SharePoint': 'https://support.microsoft.com/en-us/onedrive/share-files-and-folders-in-microsoft-onedrive',
       'pCloud': 'https://help.pcloud.com/article/shared-links',
       'Pastebin': 'https://pastebin.com/'
@@ -4530,8 +4640,6 @@ void initializeKingdom().catch(error=>{archiveUi.persistenceNotice.textContent=`
       if (hostname === 'github.com' || hostname === 'raw.githubusercontent.com') return 'GitHub file';
       if (hostname === 'pastebin.com' || hostname === 'www.pastebin.com' || hostname === 'raw.pastebin.com') return 'Pastebin';
       if (hostname === 'dropbox.com' || hostname.endsWith('.dropbox.com') || hostname === 'dropboxusercontent.com' || hostname.endsWith('.dropboxusercontent.com')) return 'Dropbox';
-      if (hostname === 'drive.google.com' || hostname === 'drive.usercontent.google.com') return 'Google Drive';
-      if (hostname === 'docs.google.com') return 'Google Docs';
       if (hostname === '1drv.ms' || hostname === 'onedrive.live.com' || hostname === 'onedrive.com' || hostname.endsWith('.sharepoint.com')) return 'OneDrive / SharePoint';
       if (hostname === 'pcloud.com' || hostname.endsWith('.pcloud.com') || hostname === 'pcloud.link' || hostname.endsWith('.pcloud.link')) return 'pCloud';
       if (hostname === 'raw.githack.com' || hostname === 'cdn.jsdelivr.net') return 'Raw text host';
@@ -4552,6 +4660,7 @@ void initializeKingdom().catch(error=>{archiveUi.persistenceNotice.textContent=`
       const service = hostService(url.hostname.toLowerCase());
       const helpUrl = SOURCE_HELP[service] || '';
       const invalid = error => ({valid: false, recognized: Boolean(service), service, normalizedUrl: '', helpUrl, error});
+      if (LedgerCore.restrictedUrl(url.href)) return invalid('This host is unavailable. Export the list as a file or use another host.');
       if (url.username || url.password) return invalid('Remove the username and password from the address.');
       const local = ['127.0.0.1', 'localhost'].includes(url.hostname);
       if (url.protocol !== 'https:' && !(url.protocol === 'http:' && local)) return invalid('Use an HTTPS address.');
@@ -4602,33 +4711,6 @@ void initializeKingdom().catch(error=>{archiveUi.persistenceNotice.textContent=`
         normalized.searchParams.set('dl', '1');
         return accepted(normalized.href, true, 'Dropbox');
       }
-      if (url.hostname === 'drive.google.com' || url.hostname === 'drive.usercontent.google.com') {
-        if (/\/(?:drive\/(?:u\/\d+\/)?folders|folders)(?:\/|$)/.test(url.pathname)) return wrongShape('This is a Google Drive folder link. Open the list file, share that file, and copy its link.');
-        const pathId = url.pathname.match(/^\/file\/d\/([^/]+)(?:\/|$)/)?.[1];
-        const id = pathId || url.searchParams.get('id');
-        if (!id || !/^(?:\/file\/d\/[^/]+(?:\/.*)?|\/open|\/uc|\/download)$/.test(url.pathname)) return wrongShape('Use a Google Drive link to one file, not a folder or Drive home page.');
-        const resourceKey = url.searchParams.get('resourcekey');
-        normalized.hostname = 'drive.google.com';
-        normalized.pathname = '/uc';
-        normalized.search = '';
-        normalized.searchParams.set('export', 'download');
-        normalized.searchParams.set('id', id);
-        if (resourceKey) normalized.searchParams.set('resourcekey', resourceKey);
-        return accepted(normalized.href, true, 'Google Drive');
-      }
-      if (url.hostname === 'docs.google.com') {
-        const match = url.pathname.match(/^\/(document|spreadsheets)(?:\/u\/\d+)?\/d\/(e\/)?([^/]+)(?:\/.*)?$/);
-        if (!match) return wrongShape('Use a Google Docs or Sheets file link. For a published file, copy its Publish to web URL.');
-        const kind = match[1];
-        const publicId = match[2] || '';
-        const id = match[3];
-        const gid = kind === 'spreadsheets' ? url.searchParams.get('gid') : '';
-        normalized.pathname = '/' + kind + '/d/' + publicId + id + '/export';
-        normalized.search = '';
-        normalized.searchParams.set('format', kind === 'document' ? 'txt' : 'csv');
-        if (gid) normalized.searchParams.set('gid', gid);
-        return accepted(normalized.href, true, kind === 'document' ? 'Google Docs' : 'Google Sheets');
-      }
       if (service === 'OneDrive / SharePoint') {
         if (!pathParts.length) return wrongShape('Use a OneDrive or SharePoint share link to one file, with access set for anyone who has the link.');
         normalized.searchParams.set('download', '1');
@@ -4663,9 +4745,6 @@ void initializeKingdom().catch(error=>{archiveUi.persistenceNotice.textContent=`
         'GitHub file': 'Next: make the repository public and use the file’s Raw link.',
         'GitHub Gist': 'Next: make the Gist public and use its raw file link.',
         'Dropbox': 'Next: confirm the shared file is available to anyone with the link.',
-        'Google Drive': 'Next: set the file access to anyone with the link, then copy that file link.',
-        'Google Docs': 'Next: publish the document or sheet to the web, or allow anyone with the link to view it.',
-        'Google Sheets': 'Next: publish the sheet to the web, or allow anyone with the link to view it.',
         'OneDrive / SharePoint': 'Next: create an anyone-with-the-link view link for the file.',
         'pCloud': 'Next: use a Public Folder direct file link if your plan includes that feature, or paste the list into Nightreel instead.',
         'Pastebin': 'Next: use the post’s raw text link.',
@@ -4784,7 +4863,8 @@ void initializeKingdom().catch(error=>{archiveUi.persistenceNotice.textContent=`
 
     async function sync(id, {manual = false} = {}) {
       const source = sources.find(item => item.id === id);
-      if (!source || busy.has(id) || !archiveApp.loaded) return;
+      if (!source || busy.has(id) || !archiveApp.loaded || window.NIGHTREEL_AUTH_PENDING) return;
+      const scopeToken = window.NightreelSync?.scopeToken();
       busy.add(id);
       source.lastCheckAt = Date.now();
       redraw();
@@ -4793,7 +4873,9 @@ void initializeKingdom().catch(error=>{archiveUi.persistenceNotice.textContent=`
         source.url = normalizeUrl(source.url);
         if (!navigator.onLine) { source.status = 'offline'; source.message = 'Offline. Your saved copy in this browser is unchanged.'; return; }
         const text = await fetchText(source.url);
+        if (scopeToken !== window.NightreelSync?.scopeToken()) return;
         const hash = await digestText(text);
+        if (scopeToken !== window.NightreelSync?.scopeToken()) return;
         const exists = archiveApp.archive.collections.some(item => item.id === source.collectionId);
         if (exists && hash === source.hash) { source.failures = 0; source.status = 'unchanged'; source.message = 'No changes since the last sync.'; return; }
         const parsed = LedgerCore.parseMovieText(text, {detectGenres: true});
@@ -4811,8 +4893,7 @@ void initializeKingdom().catch(error=>{archiveUi.persistenceNotice.textContent=`
         source.message = failureMessage(source.url, error);
       } finally {
         busy.delete(id);
-        save();
-        redraw();
+        if (scopeToken === window.NightreelSync?.scopeToken()) { save(); redraw(); }
       }
     }
 
@@ -4890,7 +4971,7 @@ void initializeKingdom().catch(error=>{archiveUi.persistenceNotice.textContent=`
     document.addEventListener('visibilitychange', tick);
     window.addEventListener('online', tick);
 
-    return {INTERVALS, list: () => sources, add, sync, remove, pause, removeStale, tick, isBusy: id => busy.has(id), label, inspectUrl, normalizeUrl, failureMessage, fetchForImport};
+    return {INTERVALS, useArchive, list: () => sources, add, sync, remove, pause, removeStale, tick, isBusy: id => busy.has(id), label, inspectUrl, normalizeUrl, failureMessage, fetchForImport};
   })();
 
   function appendCloudHelpLink(node, href, label) {
@@ -4948,7 +5029,7 @@ void initializeKingdom().catch(error=>{archiveUi.persistenceNotice.textContent=`
     }
     const list = $('st-source-list');
     list.replaceChildren();
-    if (!Cloud.list().length) list.append(createNode('p', 'quiet', 'No cloud sources yet. Add a public Markdown or text link from GitHub, Gist, Dropbox, Google Drive, OneDrive, pCloud, or another raw text host.'));
+    if (!Cloud.list().length) list.append(createNode('p', 'quiet', 'No cloud sources yet. Add a public Markdown or text link from GitHub, Gist, Dropbox, OneDrive, pCloud, or another raw text host.'));
     for (const source of Cloud.list()) {
       const collection = archiveApp.archive.collections.find(item => item.id === source.collectionId);
       const row = createNode('article', 'st-item');
@@ -5075,7 +5156,8 @@ void initializeKingdom().catch(error=>{archiveUi.persistenceNotice.textContent=`
   function saveProfileCard(card) {
     const id = card.dataset.profile;
     const values = readProfileCard(card);
-    if (id === 'custom' && values.base && !DirectAI.validBase(values.base)) throw new Error('Use an HTTPS address, or http on localhost, without a query string.');
+    if (id === 'custom' && values.base && !DirectAI.validBase(values.base)) throw new Error('Use a supported HTTPS address, or http on localhost, without a query string.');
+    if (/(?:^|[\/._-])(?:google|gemini)(?:[\/._-]|$)/i.test(values.model)) throw new Error('That model provider is unavailable.');
     const config = DirectAI.loadConfig();
     config.profiles[id] = {enabled: values.enabled, model: values.model, base: id === 'custom' ? values.base || '' : config.profiles[id].base, remember: values.remember};
     config.maxTitles = Math.min(600, Math.max(50, Number($('st-max-titles').value) || 250));
@@ -5159,7 +5241,7 @@ void initializeKingdom().catch(error=>{archiveUi.persistenceNotice.textContent=`
 
   function recordsToMarkdown(records, sourceName) {
     const pick = (record, names) => { for (const name of names) if (record[name] !== undefined && String(record[name]).trim()) return String(record[name]).trim(); return ''; };
-    const lines = ['| Title | Genres | Watched | Rating | Notes |', '| --- | --- | --- | --- | --- |'];
+    const lines = ['| Title | Genres | Watched | Favorite | Rating | Notes | Poster |', '| --- | --- | --- | --- | --- | --- | --- |'];
     let kept = 0;
     for (const record of records) {
       const title = pick(record, ['title', 'name', 'film', 'movie', 'original title']);
@@ -5167,7 +5249,8 @@ void initializeKingdom().catch(error=>{archiveUi.persistenceNotice.textContent=`
       const year = pick(record, ['year', 'release year', 'released', 'release date', 'date']).match(/\b(?:18|19|20)\d{2}\b/)?.[0] || '';
       const genres = pick(record, ['genres', 'genre', 'category', 'categories']);
       const watched = /^(?:1|true|yes|y|x|watched|seen|✓|✔)$/i.test(pick(record, ['watched', 'seen', 'status']));
-      lines.push(`| ${tableCell(/\(\d{4}[^)]*\)\s*$/.test(title) || !year ? title : `${title} (${year})`)} | ${tableCell(Array.isArray(record.genres) ? record.genres.join('; ') : genres)} | ${watched ? 'yes' : ''} | ${tableCell(pick(record, ['rating', 'stars', 'my rating']))} | ${tableCell(pick(record, ['notes', 'note', 'review', 'comment', 'comments']))} |`);
+      const favorite = /^(?:1|true|yes|y|x|favorite|favourite|✓|✔)$/i.test(pick(record, ['favorite', 'favourite']));
+      lines.push(`| ${tableCell(/\(\d{4}[^)]*\)\s*$/.test(title) || !year ? title : `${title} (${year})`)} | ${tableCell(Array.isArray(record.genres) ? record.genres.join('; ') : genres)} | ${watched ? 'yes' : ''} | ${favorite ? 'yes' : ''} | ${tableCell(pick(record, ['rating', 'stars', 'my rating']))} | ${tableCell(pick(record, ['notes', 'note', 'review', 'comment', 'comments']))} | ${tableCell(pick(record, ['poster', 'poster url', 'posterurl']))} |`);
       kept += 1;
     }
     if (!kept) throw new Error(`${sourceName}: no title column or no rows with a title. Add a header row containing Title.`);
@@ -5198,6 +5281,7 @@ void initializeKingdom().catch(error=>{archiveUi.persistenceNotice.textContent=`
 
   const baseReadImportFiles = readImportFiles;
   readImportFiles = async function readImportFilesWithTables(files) {
+    const scopeToken=window.NightreelSync?.scopeToken();
     const converted = [];
     const failures = [];
     for (const file of [...files].slice(0, 20)) {
@@ -5209,6 +5293,7 @@ void initializeKingdom().catch(error=>{archiveUi.persistenceNotice.textContent=`
         converted.push(new File([markdown], file.name.replace(/\.(?:csv|tsv|json)$/i, '.md'), {type: 'text/markdown'}));
       } catch (error) { failures.push(error.message); }
     }
+    if(scopeToken!==window.NightreelSync?.scopeToken())return;
     if (!converted.length) { setFormStatus(archiveUi.importStatus, failures.join(' ') || 'No readable file was selected.', true); return; }
     await baseReadImportFiles(converted);
     if (failures.length) setFormStatus(archiveUi.importStatus, failures.join(' '), true);
@@ -5373,6 +5458,7 @@ void initializeKingdom().catch(error=>{archiveUi.persistenceNotice.textContent=`
   const readiness = setInterval(() => {
     if (!realmState.ready) return;
     clearInterval(readiness);
+    Cloud.useArchive();
     if (archiveApp.archive.settings.provider === 'wikipedia' && !localStorage.getItem('HK_ARTWORK_NOTICE_V1')) {
       try { localStorage.setItem('HK_ARTWORK_NOTICE_V1', '1'); } catch { /* The notice simply repeats next time. */ }
       showMessage('Artwork now has an Automatic mode with extra sources. Switch it on in Appearance & artwork.', false, 9000);
@@ -5383,663 +5469,7 @@ void initializeKingdom().catch(error=>{archiveUi.persistenceNotice.textContent=`
 })();
 </script>
 
-<script>
-// ==================== NIGHTREEL CLOUD SYNC ====================
-// Firebase Auth + Firestore real-time cross-device sync
-// Free tier: 1GB storage, 50K reads/day, 20K writes/day
-// ============================================================
-
-(async () => {
-'use strict';
-
-// ---- Firebase config (Nightreel project) ----
-// Users set up their own Firebase project and paste config here,
-// or use the hosted demo project (rate-limited, for try-outs).
-// The config is public — security is enforced by Firestore rules.
-const FIREBASE_CONFIG_KEY = 'NIGHTREEL_FIREBASE_CONFIG_V1';
-
-function getFirebaseConfig() {
-  try {
-    const stored = JSON.parse(localStorage.getItem(FIREBASE_CONFIG_KEY) || 'null');
-    if (stored && stored.apiKey && stored.projectId) return stored;
-  } catch {}
-  return null;
-}
-
-function saveFirebaseConfig(cfg) {
-  try { localStorage.setItem(FIREBASE_CONFIG_KEY, JSON.stringify(cfg)); } catch {}
-}
-
-// ---- State ----
-const fb = {
-  app: null, auth: null, db: null,
-  user: null, unsubscribe: null,
-  syncing: false, lastError: '', lastSyncedAt: null,
-  remoteRevision: 0, localWriteRevision: 0, writeTimer: null,
-  initialized: false
-};
-
-// ---- DOM helpers ----
-function el(id) { return document.getElementById(id); }
-
-function setAuthUI(user) {
-  const info = el('nr-auth-info');
-  if (!info) return;
-  if (user) {
-    info.textContent = '☁ ' + (user.displayName || user.email || 'Synced');
-    info.title = `Signed in as ${user.email || user.displayName} · open Settings to manage`;
-    info.hidden = false;
-  } else {
-    info.textContent = '';
-    info.hidden = true;
-  }
-}
-
-function setSyncBadge(state) {
-  const badge = el('nr-sync-badge');
-  if (!badge) return;
-  const labels = { idle: '', syncing: '⟳ Syncing', ok: '✓ Synced', error: '⚠ Sync error' };
-  badge.textContent = labels[state] || '';
-  badge.dataset.state = state;
-  badge.hidden = !labels[state];
-}
-
-// ---- Load Firebase dynamically ----
-async function loadFirebase() {
-  if (window.__firebaseLoaded) return true;
-  // Use Firebase 9 compat bundles — plain <script> tags, no ES module system,
-  // works from any origin including file://.
-  const sdkVersion = '9.23.0';
-  const base = `https://www.gstatic.com/firebasejs/${sdkVersion}`;
-  const urls = [
-    `${base}/firebase-app-compat.js`,
-    `${base}/firebase-auth-compat.js`,
-    `${base}/firebase-firestore-compat.js`,
-  ];
-  function loadScript(src) {
-    return new Promise((res, rej) => {
-      if (document.querySelector(`script[src="${src}"]`)) { res(); return; }
-      const s = document.createElement('script');
-      s.src = src; s.async = false;
-      s.onload = res;
-      s.onerror = () => rej(new Error(`Failed to load ${src}`));
-      document.head.appendChild(s);
-    });
-  }
-  try {
-    for (const url of urls) await loadScript(url);
-    // Compat layer exposes window.firebase global
-    if (!window.firebase) throw new Error('firebase global not found after SDK load');
-    // Map to the same __firebaseModules interface so the rest of the code is unchanged
-    window.__firebaseModules = {
-      initializeApp: (cfg, name) => window.firebase.initializeApp(cfg, name),
-      getAuth: app => app.auth(),
-      onAuthStateChanged: (auth, cb) => auth.onAuthStateChanged(cb),
-      signInWithPopup: (auth, provider) => auth.signInWithPopup(provider),
-      signInWithEmailAndPassword: (auth, e, p) => auth.signInWithEmailAndPassword(e, p),
-      createUserWithEmailAndPassword: (auth, e, p) => auth.createUserWithEmailAndPassword(e, p),
-      GoogleAuthProvider: window.firebase.auth.GoogleAuthProvider,
-      signOut: auth => auth.signOut(),
-      updateProfile: (user, profile) => user.updateProfile(profile),
-      getFirestore: app => app.firestore(),
-      doc: (db, ...pathSegs) => {
-        // Compat: db.collection('a').doc('b').collection('c').doc('d')
-        const parts = pathSegs.join('/').split('/').filter(Boolean);
-        if (parts.length % 2 !== 0) throw new Error('Firestore path must have even segments');
-        let ref = db;
-        for (let i = 0; i < parts.length; i += 2) {
-          ref = ref.collection(parts[i]).doc(parts[i+1]);
-        }
-        return ref;
-      },
-      setDoc: (ref, data, opts) => opts?.merge ? ref.set(data, opts) : ref.set(data),
-      getDoc: ref => ref.get(),
-      onSnapshot: (ref, cb, errCb) => ref.onSnapshot(cb, errCb),
-      serverTimestamp: () => window.firebase.firestore.FieldValue.serverTimestamp(),
-    };
-    window.__firebaseLoaded = true;
-    return true;
-  } catch (e) {
-    console.warn('[Nightreel] Firebase SDK load failed:', e.message);
-    return false;
-  }
-}
-
-// ---- Initialize Firebase with user config ----
-async function initFirebase(config) {
-  if (!(await loadFirebase())) return false;
-  if (!window.__firebaseModules) return false;
-  const { initializeApp, getAuth, onAuthStateChanged, getFirestore } = window.__firebaseModules;
-  try {
-    // Delete existing app with same name to allow reinit
-    try {
-      const existing = window.firebase?.apps?.find(a => a.name === 'nightreel-' + config.projectId);
-      if (existing) await existing.delete();
-    } catch {}
-    fb.app = initializeApp(config, 'nightreel-' + config.projectId);
-    fb.auth = getAuth(fb.app);
-    fb.db = getFirestore(fb.app);
-    fb.initialized = true;
-    onAuthStateChanged(fb.auth, handleAuthChange);
-    return true;
-  } catch (e) {
-    fb.lastError = e.message;
-    console.warn('[Nightreel] Firebase init error:', e.message);
-    return false;
-  }
-}
-
-// ---- Auth state change handler ----
-async function handleAuthChange(user) {
-  fb.user = user;
-  setAuthUI(user);
-  if (user) {
-    setSyncBadge('syncing');
-    subscribeToArchive(user.uid);
-    await pullFromFirestore(user.uid, true);
-    // Auto-fetch GitHub if configured in user prefs
-    autoFetchGitHubIfConfigured();
-  } else {
-    if (fb.unsubscribe) { fb.unsubscribe(); fb.unsubscribe = null; }
-    setSyncBadge('idle');
-  }
-  renderAuthDialog();
-}
-
-// ---- Firestore: subscribe to real-time updates ----
-function subscribeToArchive(uid) {
-  if (fb.unsubscribe) fb.unsubscribe();
-  const { doc, onSnapshot } = window.__firebaseModules;
-  fb.unsubscribe = onSnapshot(
-    doc(fb.db, 'users', uid, 'archive', 'main'),
-    snapshot => {
-      if (!snapshot.exists) return;
-      const data = snapshot.data();
-      if (!data || !data.archive) return;
-      // Ignore if this came from our own write (compare revision token)
-      if (data.writeRevision === fb.localWriteRevision) return;
-      fb.remoteRevision = data.writeRevision || 0;
-      mergeRemoteArchive(data.archive);
-    },
-    err => {
-      fb.lastError = err.message;
-      setSyncBadge('error');
-    }
-  );
-}
-
-// ---- Merge remote archive into local state ----
-function mergeRemoteArchive(remoteArchive) {
-  if (!window.archiveApp || !realmState?.ready) return;
-  try {
-    const validated = typeof LedgerCore !== 'undefined'
-      ? LedgerCore.validateArchive ? LedgerCore.validateArchive(remoteArchive) : remoteArchive
-      : remoteArchive;
-    // Merge: remote collections win for new films, local wins for user data (notes, ratings)
-    for (const remoteCol of validated.collections || []) {
-      const localCol = archiveApp.archive.collections.find(c => c.id === remoteCol.id);
-      if (!localCol) {
-        archiveApp.archive.collections.push(remoteCol);
-      } else {
-        for (const remoteFilm of remoteCol.films) {
-          const localFilm = localCol.films.find(f => f.id === remoteFilm.id);
-          if (!localFilm) {
-            localCol.films.push(remoteFilm);
-          } else {
-            // Remote wins for watched/rating/favorite/note unless local is newer
-            const remoteTs = remoteFilm.updatedAt || remoteFilm.watchedAt || '1970';
-            const localTs = localFilm.updatedAt || localFilm.watchedAt || '1970';
-            if (remoteTs > localTs) {
-              Object.assign(localFilm, {
-                watched: remoteFilm.watched,
-                watchedAt: remoteFilm.watchedAt,
-                rating: remoteFilm.rating,
-                favorite: remoteFilm.favorite,
-                note: remoteFilm.note,
-                watchHistory: remoteFilm.watchHistory,
-                watchStatus: remoteFilm.watchStatus,
-                queue: remoteFilm.queue,
-              });
-            }
-          }
-        }
-      }
-    }
-    // Sync top-level settings and activeId from remote if newer
-    if (validated.settings) {
-      // Merge settings non-destructively: remote wins for display/provider prefs
-      Object.assign(archiveApp.archive.settings, validated.settings);
-    }
-    if (validated.activeId && archiveApp.archive.collections.some(c => c.id === validated.activeId)) {
-      archiveApp.archive.activeId = validated.activeId;
-    }
-    setSyncBadge('ok');
-    if (typeof renderArchive !== 'undefined') renderArchive(false);
-    if (typeof ArchiveStorage !== 'undefined') void ArchiveStorage.save(archiveApp.archive);
-    fb.lastSyncedAt = new Date().toISOString();
-  } catch (e) {
-    fb.lastError = e.message;
-    setSyncBadge('error');
-  }
-}
-
-// ---- Pull archive from Firestore (on login/init) ----
-async function pullFromFirestore(uid, announce = false) {
-  if (!fb.db) return;
-  const { doc, getDoc } = window.__firebaseModules;
-  setSyncBadge('syncing');
-  try {
-    const snap = await getDoc(doc(fb.db, 'users', uid, 'archive', 'main'));
-    if (snap.exists && snap.data()?.archive) {
-      mergeRemoteArchive(snap.data().archive);
-      if (announce) showNightreelMessage('Synced from cloud ✓');
-    } else if (announce) {
-      // No cloud data yet — push local data up
-      await pushToFirestore();
-      showNightreelMessage('Archive saved to cloud ✓');
-    }
-    setSyncBadge('ok');
-  } catch (e) {
-    fb.lastError = e.message;
-    setSyncBadge('error');
-  }
-}
-
-// ---- Push archive to Firestore ----
-async function pushToFirestore() {
-  if (!fb.db || !fb.user) return;
-  const { doc, setDoc, serverTimestamp } = window.__firebaseModules;
-  fb.localWriteRevision = Date.now();
-  setSyncBadge('syncing');
-  try {
-    await setDoc(
-      doc(fb.db, 'users', fb.user.uid, 'archive', 'main'),
-      {
-        archive: archiveApp.archive,
-        writeRevision: fb.localWriteRevision,
-        updatedAt: serverTimestamp(),
-        userEmail: fb.user.email || '',
-      },
-      { merge: false }
-    );
-    setSyncBadge('ok');
-    fb.lastSyncedAt = new Date().toISOString();
-    fb.lastError = '';
-    updateSyncStatusLine();
-  } catch (e) {
-    fb.lastError = e.message;
-    setSyncBadge('error');
-  }
-}
-
-// ---- Scheduled push (debounced, 3s after last change) ----
-function schedulePushToFirestore() {
-  if (!fb.user || !fb.db) return;
-  clearTimeout(fb.writeTimer);
-  fb.writeTimer = setTimeout(() => void pushToFirestore(), 3000);
-}
-
-// ---- Auto-fetch GitHub on login ----
-function autoFetchGitHubIfConfigured() {
-  // Try GitHub repo sync
-  if (typeof GitHubRepoSync !== 'undefined' && GitHubRepoSync.configured() && !GitHubRepoSync.isPaused()) {
-    void githubSyncPullAndApply({ announce: false });
-    return;
-  }
-  // Try GitHub Gist sync
-  if (typeof GitHubGistSync !== 'undefined' && GitHubGistSync.configured() && !GitHubGistSync.isPaused()) {
-    void githubGistSyncPullAndApply(false);
-    return;
-  }
-  // Try Cloud sources
-  if (typeof Cloud !== 'undefined') {
-    const sources = Cloud.list();
-    if (sources.length > 0) {
-      for (const source of sources) {
-        if (!Cloud.isBusy(source.id)) void Cloud.sync(source.id, { manual: false });
-      }
-    }
-  }
-}
-
-// ---- Show a toast message ----
-function showNightreelMessage(msg) {
-  if (typeof showMessage === 'function') { showMessage(msg, false, 4000); return; }
-  const t = el('toast');
-  if (t) {
-    const copy = el('toast-copy');
-    if (copy) copy.textContent = msg;
-    t.hidden = false;
-    setTimeout(() => { t.hidden = true; }, 4000);
-  }
-}
-
-// ---- Update sync status in settings ----
-function updateSyncStatusLine() {
-  const line = el('nr-firestore-status');
-  if (!line) return;
-  if (!fb.initialized) { line.textContent = 'Not configured.'; return; }
-  if (!fb.user) { line.textContent = 'Signed out.'; return; }
-  if (fb.lastError) { line.textContent = `Error: ${fb.lastError}`; line.classList.add('is-error'); return; }
-  line.classList.remove('is-error');
-  line.textContent = fb.lastSyncedAt
-    ? `Synced ${new Date(fb.lastSyncedAt).toLocaleString()}`
-    : 'Signed in. Sync pending…';
-}
-
-// ---- Intercept persistArchive to also push to Firestore ----
-function hookPersistArchive() {
-  const originalPersist = window.persistArchive;
-  if (!originalPersist) return;
-  window.persistArchive = function() {
-    const result = originalPersist.apply(this, arguments);
-    schedulePushToFirestore();
-    return result;
-  };
-  // Also hook the realm override
-  if (typeof realmBase !== 'undefined' && realmBase.persistArchive) {
-    const origRealm = realmBase.persistArchive;
-    realmBase.persistArchive = function() {
-      const r = origRealm.apply(this, arguments);
-      schedulePushToFirestore();
-      return r;
-    };
-  }
-}
-
-// ---- Auth dialog ----
-function buildAuthDialog() {
-  if (el('nr-auth-dialog')) return;
-  const dialog = document.createElement('dialog');
-  dialog.id = 'nr-auth-dialog';
-  dialog.className = 'overlay';
-  dialog.setAttribute('aria-labelledby', 'nr-auth-title');
-  dialog.innerHTML = `
-  <section class="modal-card settings-card" style="max-width:520px">
-    <header class="modal-header">
-      <div>
-        <p class="eyebrow">☁ Cross-device sync</p>
-        <h2 id="nr-auth-title">Sign in to Nightreel</h2>
-      </div>
-      <button type="button" class="icon-button" id="nr-auth-close" aria-label="Close">×</button>
-    </header>
-    <div class="modal-body" id="nr-auth-body">
-      <div id="nr-auth-signedout">
-        <p class="quiet" style="margin-bottom:24px">Sign in to sync your watched list, ratings, and notes across all your devices. All your data is stored only in your account — no one else can see it.</p>
-        <p id="nr-no-config-notice" class="quiet" hidden style="margin-bottom:16px">Connect a Firebase project below before signing in.</p>
-        <button type="button" class="button primary large" id="nr-signin-google" style="width:100%;margin-bottom:12px;gap:12px">
-          <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#4285F4" d="M44.5 20H24v8.5h11.8C34.7 33.9 29.9 37 24 37c-7.2 0-13-5.8-13-13s5.8-13 13-13c3.1 0 5.9 1.1 8.1 2.9l6.4-6.4C34.6 4.1 29.6 2 24 2 11.8 2 2 11.8 2 24s9.8 22 22 22c11 0 21-8 21-22 0-1.3-.2-2.7-.5-4z"/><path fill="#34A853" d="M6.3 14.7l7 5.1C15 16.1 19.1 13 24 13c3.1 0 5.9 1.1 8.1 2.9l6.4-6.4C34.6 4.1 29.6 2 24 2 16.2 2 9.5 7.4 6.3 14.7z"/><path fill="#FBBC05" d="M24 46c5.8 0 10.8-1.9 14.6-5.2l-6.7-5.5C29.9 37 27.1 38 24 38c-5.8 0-10.8-3.9-11.9-9.2l-7 5.4C8.1 41.4 15.5 46 24 46z"/><path fill="#EA4335" d="M44.5 20H24v8.5h11.8c-1 3.3-3.3 6-6.3 7.8l6.7 5.5C40.3 38.3 45 32 45 24c0-1.3-.2-2.7-.5-4z"/></svg>
-          Continue with Google
-        </button>
-        <div style="display:flex;align-items:center;gap:12px;margin:16px 0;color:var(--muted);font-size:12px">
-          <span style="flex:1;border-bottom:1px solid var(--line)"></span>or<span style="flex:1;border-bottom:1px solid var(--line)"></span>
-        </div>
-        <label class="field-label">Email<input type="email" id="nr-email" class="text-field" autocomplete="email" placeholder="you@example.com"></label>
-        <label class="field-label">Password<input type="password" id="nr-password" class="text-field" autocomplete="current-password" placeholder="Your password"></label>
-        <div style="display:flex;gap:12px;margin-top:4px">
-          <button type="button" class="button primary" id="nr-signin-email" style="flex:1">Sign in</button>
-          <button type="button" class="button ghost" id="nr-signup-email" style="flex:1">Create account</button>
-        </div>
-        <p id="nr-auth-error" class="form-status is-error" style="margin-top:12px" hidden></p>
-        <details id="nr-firebase-config-details" class="edit-details" style="margin-top:24px">
-          <summary>Firebase project (for your own sync backend)</summary>
-          <p class="quiet" style="margin-top:12px">Nightreel needs a <a href="https://firebase.google.com" target="_blank" rel="noopener noreferrer">Firebase</a> project to sync your data. Paste your project config below — found in Firebase Console → Project settings → General → Your apps. In the console, also set Firestore rules to: <code style="font-size:11px">allow read, write: if request.auth.uid == uid</code> under <code style="font-size:11px">/users/{uid}/{document=**}</code>.</p>
-          <label class="field-label" style="margin-top:16px">Firebase config JSON<textarea id="nr-firebase-config-input" class="text-field" rows="6" style="font-family:monospace;font-size:12px" placeholder='{"apiKey":"...","authDomain":"...","projectId":"..."}'></textarea></label>
-          <button type="button" class="button" id="nr-firebase-config-save" style="margin-top:8px">Save config and connect</button>
-          <p id="nr-firebase-config-status" class="form-status" style="margin-top:8px"></p>
-        </details>
-      </div>
-      <div id="nr-auth-signedin" hidden>
-        <p id="nr-user-info" class="quiet" style="margin-bottom:24px"></p>
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <div>
-            <strong style="font-size:15px" id="nr-signedout-name"></strong>
-            <p id="nr-sync-status-line" class="quiet" style="margin-top:4px"></p>
-          </div>
-          <button type="button" class="button ghost" id="nr-signout-btn">Sign out</button>
-        </div>
-        <button type="button" class="button primary" id="nr-force-sync" style="margin-top:16px;width:100%">⟳ Sync now</button>
-        <details id="nr-firebase-config-details-signedin" class="edit-details" style="margin-top:24px">
-          <summary>Firebase project</summary>
-          <label class="field-label" style="margin-top:16px">Firebase config JSON<textarea id="nr-firebase-config-input-signedin" class="text-field" rows="6" style="font-family:monospace;font-size:12px"></textarea></label>
-          <button type="button" class="button" id="nr-firebase-config-save-signedin" style="margin-top:8px">Save config and reconnect</button>
-          <p id="nr-firebase-config-status-signedin" class="form-status" style="margin-top:8px"></p>
-        </details>
-      </div>
-    </div>
-  </section>`;
-  document.body.appendChild(dialog);
-  bindAuthDialogEvents(dialog);
-}
-
-function renderAuthDialog() {
-  const signedOut = el('nr-auth-signedout');
-  const signedIn = el('nr-auth-signedin');
-  if (!signedOut || !signedIn) return;
-  if (fb.user) {
-    signedOut.hidden = true;
-    signedIn.hidden = false;
-    const nameEl = el('nr-signedout-name');
-    if (nameEl) nameEl.textContent = fb.user.displayName || fb.user.email || 'Signed in';
-    const info = el('nr-user-info');
-    if (info) info.textContent = `Signed in as ${fb.user.email || fb.user.displayName || 'unknown'}`;
-    const statusLine = el('nr-sync-status-line');
-    if (statusLine) statusLine.textContent = fb.lastSyncedAt
-      ? `Last synced ${new Date(fb.lastSyncedAt).toLocaleString()}`
-      : 'Ready to sync';
-    const configInputSignedIn = el('nr-firebase-config-input-signedin');
-    if (configInputSignedIn) {
-      const cfg = getFirebaseConfig();
-      if (cfg) configInputSignedIn.value = JSON.stringify(cfg, null, 2);
-    }
-  } else {
-    signedOut.hidden = false;
-    signedIn.hidden = true;
-    const notice = el('nr-no-config-notice');
-    const details = el('nr-firebase-config-details');
-    const hasConfig = !!getFirebaseConfig();
-    if (notice) notice.hidden = hasConfig;
-    if (details && !hasConfig) details.open = true;
-    const configInput = el('nr-firebase-config-input');
-    if (configInput) {
-      const cfg = getFirebaseConfig();
-      if (cfg) configInput.value = JSON.stringify(cfg, null, 2);
-    }
-  }
-}
-
-function bindAuthDialogEvents(dialog) {
-  const close = () => { if (dialog.open) dialog.close(); };
-  el('nr-auth-close').addEventListener('click', close);
-  dialog.addEventListener('click', e => { if (e.target === dialog) close(); });
-
-  el('nr-signin-google').addEventListener('click', async () => {
-    if (!fb.auth) { const d = el('nr-firebase-config-details'); if (d) d.open = true; return showAuthError('Connect a Firebase project below first.'); }
-    clearAuthError();
-    setAuthBusy(true);
-    try {
-      const { signInWithPopup, GoogleAuthProvider } = window.__firebaseModules;
-      await signInWithPopup(fb.auth, new GoogleAuthProvider());
-      close();
-    } catch (e) {
-      showAuthError(e.code === 'auth/popup-closed-by-user' ? 'Sign-in cancelled.' : e.message);
-    } finally { setAuthBusy(false); }
-  });
-
-  el('nr-signin-email').addEventListener('click', async () => {
-    if (!fb.auth) { const d = el('nr-firebase-config-details'); if (d) d.open = true; return showAuthError('Connect a Firebase project below first.'); }
-    const email = el('nr-email').value.trim();
-    const pw = el('nr-password').value;
-    if (!email || !pw) return showAuthError('Enter your email and password.');
-    clearAuthError(); setAuthBusy(true);
-    try {
-      const { signInWithEmailAndPassword } = window.__firebaseModules;
-      await signInWithEmailAndPassword(fb.auth, email, pw);
-      close();
-    } catch (e) { showAuthError(e.message); }
-    finally { setAuthBusy(false); }
-  });
-
-  el('nr-signup-email').addEventListener('click', async () => {
-    if (!fb.auth) { const d = el('nr-firebase-config-details'); if (d) d.open = true; return showAuthError('Connect a Firebase project below first.'); }
-    const email = el('nr-email').value.trim();
-    const pw = el('nr-password').value;
-    if (!email || !pw) return showAuthError('Enter an email and password to create an account.');
-    if (pw.length < 6) return showAuthError('Password must be at least 6 characters.');
-    clearAuthError(); setAuthBusy(true);
-    try {
-      const { createUserWithEmailAndPassword } = window.__firebaseModules;
-      await createUserWithEmailAndPassword(fb.auth, email, pw);
-      close();
-    } catch (e) { showAuthError(e.message); }
-    finally { setAuthBusy(false); }
-  });
-
-  el('nr-signout-btn').addEventListener('click', async () => {
-    if (!fb.auth) return;
-    const { signOut } = window.__firebaseModules;
-    await signOut(fb.auth);
-    close();
-  });
-
-  el('nr-force-sync').addEventListener('click', async () => {
-    if (!fb.user) return;
-    await pushToFirestore();
-    updateSyncStatusLine();
-    renderAuthDialog();
-    showNightreelMessage('Synced ✓');
-  });
-
-  async function saveConfigFrom(inputId, statusId) {
-    const input = el(inputId).value.trim();
-    const status = el(statusId);
-    try {
-      const cfg = JSON.parse(input);
-      if (!cfg.apiKey || !cfg.projectId) throw new Error('Config must include apiKey and projectId.');
-      saveFirebaseConfig(cfg);
-      status.textContent = 'Config saved. Connecting…';
-      status.classList.remove('is-error');
-      const ok = await initFirebase(cfg);
-      if (ok) {
-        status.textContent = 'Connected. Sign in to start syncing.';
-        const notice = el('nr-no-config-notice');
-        if (notice) notice.hidden = true;
-      } else {
-        status.textContent = `Could not connect: ${fb.lastError || 'check the values.'}`;
-        status.classList.add('is-error');
-      }
-    } catch (e) {
-      status.textContent = e.message;
-      status.classList.add('is-error');
-    }
-  }
-  el('nr-firebase-config-save').addEventListener('click', () => saveConfigFrom('nr-firebase-config-input', 'nr-firebase-config-status'));
-  el('nr-firebase-config-save-signedin').addEventListener('click', () => saveConfigFrom('nr-firebase-config-input-signedin', 'nr-firebase-config-status-signedin'));
-}
-
-function showAuthError(msg) {
-  const el2 = el('nr-auth-error');
-  if (el2) { el2.textContent = msg; el2.hidden = false; }
-}
-function clearAuthError() {
-  const el2 = el('nr-auth-error');
-  if (el2) { el2.textContent = ''; el2.hidden = true; }
-}
-function setAuthBusy(busy) {
-  for (const id of ['nr-signin-google','nr-signin-email','nr-signup-email']) {
-    const btn = el(id);
-    if (btn) btn.disabled = busy;
-  }
-}
-
-// ---- Inject topbar sync status badge ----
-// No separate "Sign in" button here: Settings → Cloud sync already opens this same
-// dialog (nr-open-cloud-sync), so a second entry point in the topbar would just be a
-// redundant way to reach the same place. Only a small status badge is injected.
-function injectTopbarAuth() {
-  const actions = document.querySelector('.topbar-actions');
-  if (!actions || el('nr-sync-badge')) return;
-
-  const syncBadge = document.createElement('span');
-  syncBadge.id = 'nr-sync-badge';
-  syncBadge.hidden = true;
-  syncBadge.style.cssText = 'font-size:11px;color:var(--jade);letter-spacing:.05em;white-space:nowrap;align-self:center';
-
-  const authInfo = document.createElement('span');
-  authInfo.id = 'nr-auth-info';
-  authInfo.hidden = true;
-  authInfo.style.cssText = 'font-size:11px;color:var(--secondary);white-space:nowrap;overflow:hidden;max-width:120px;text-overflow:ellipsis;align-self:center';
-
-  const importBtn = el('open-import');
-  if (importBtn) {
-    actions.insertBefore(syncBadge, importBtn);
-    actions.insertBefore(authInfo, importBtn);
-  } else {
-    actions.appendChild(syncBadge);
-    actions.appendChild(authInfo);
-  }
-}
-
-// ---- Inject sync status CSS ----
-function injectStyles() {
-  const style = document.createElement('style');
-  style.textContent = `
-    #nr-sync-badge { padding: 4px 10px; border: 1px solid var(--line); border-radius: var(--radius-pill); }
-    #nr-sync-badge[data-state="syncing"] { color: var(--blue); animation: breath 1.5s linear infinite; }
-    #nr-sync-badge[data-state="ok"] { color: var(--jade); }
-    #nr-sync-badge[data-state="error"] { color: var(--ruby); }
-    #nr-auth-info { padding: 4px 10px; border: 1px solid var(--line); border-radius: var(--radius-pill); }
-    @media (max-width: 639px) { #nr-auth-info { display: none !important; } }
-  `;
-  document.head.appendChild(style);
-}
-
-// ---- Auto-fetch fix: also run on init if GitHub is configured ----
-// This patches the auto-fetch race condition: even if initializeKingdom already ran
-// before Firebase was ready, we re-trigger GitHub fetch on first auth.
-// (The existing initializeKingdom already calls githubSyncPullAndApply if configured,
-//  but only for tokens saved from previous sessions. The Firestore path is additive.)
-
-// ---- Boot sequence ----
-async function boot() {
-  injectStyles();
-  injectTopbarAuth();
-
-  // Try to auto-init from saved config
-  const cfg = getFirebaseConfig();
-  if (cfg) {
-    const ok = await initFirebase(cfg);
-    if (!ok) console.warn('[Nightreel] Firebase init failed:', fb.lastError);
-  }
-
-  // Hook persistArchive once app is ready
-  const hookWhenReady = setInterval(() => {
-    if (typeof persistArchive === 'function' && typeof archiveApp !== 'undefined') {
-      clearInterval(hookWhenReady);
-      hookPersistArchive();
-    }
-  }, 500);
-  setTimeout(() => clearInterval(hookWhenReady), 20000);
-
-  // Expose for settings panel
-  window.NightreelFirestore = {
-    isSignedIn: () => !!fb.user,
-    getUser: () => fb.user,
-    pushNow: pushToFirestore,
-    pullNow: () => fb.user ? pullFromFirestore(fb.user.uid, true) : Promise.resolve(),
-    init: initFirebase,
-    openDialog: () => {
-      buildAuthDialog();
-      renderAuthDialog();
-      el('nr-auth-dialog').showModal();
-    }
-  };
-}
-
-boot();
-
-})();
-</script>
+<script src="app-sync.js"></script>
 
 </body>
 </html>
