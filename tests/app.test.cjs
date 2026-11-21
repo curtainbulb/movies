@@ -10,7 +10,7 @@ async function until(condition, message, timeout = 8000) {
   while (Date.now() - started < timeout) { if (condition()) return; await sleep(25); }
   throw new Error(`Timed out: ${message}`);
 }
-function backend() { return {rows: new Map(), users: new Map(), fail: false, revoked:new Set(), confirmSignup:false, blockedReads:new Map(), conflictOnce:false}; }
+function backend() { return {rows: new Map(), users: new Map(), fail: false, revoked:new Set(), confirmSignup:false, blockedReads:new Map(), conflictOnce:false, artwork: new Map()}; }
 function simulatedClient(window, server) {
   let user = JSON.parse(window.localStorage.getItem('test-auth') || 'null');
   let listener;
@@ -31,15 +31,30 @@ function simulatedClient(window, server) {
     async updateUser() { return {error:null}; }
   };
   return {auth,
-    from() { return {select(){return this;},eq(_key,id){this.id=id;return this;},async maybeSingle(){
-      if (server.fail) return {error:offline()};
-      const row = user?.id === this.id ? server.rows.get(user.id) : null;
-      const copy = row ? structuredClone(row) : null;
-      const gate = server.blockedReads.get(this.id);
-      if(gate){gate.started=true; await gate.promise;}
-      return {data:copy,error:null};
-    }};},
-    async rpc(_name,{expected_revision,document}) {
+    from(table) {
+      if (table === 'nightreel_artwork_cache') return {select(){return this;},eq(_key,id){this.id=id;return this;},async maybeSingle(){
+        if (server.fail) return {error:offline()};
+        if (!user) return {error:{status:401,message:'No session'}};
+        const entry = server.artwork.get(this.id);
+        return {data: entry ? structuredClone(entry) : null, error:null};
+      }};
+      return {select(){return this;},eq(_key,id){this.id=id;return this;},async maybeSingle(){
+        if (server.fail) return {error:offline()};
+        const row = user?.id === this.id ? server.rows.get(user.id) : null;
+        const copy = row ? structuredClone(row) : null;
+        const gate = server.blockedReads.get(this.id);
+        if(gate){gate.started=true; await gate.promise;}
+        return {data:copy,error:null};
+      }};
+    },
+    async rpc(name, args) {
+      if (name === 'nightreel_upsert_artwork') {
+        if (server.fail) return {error:offline()};
+        if (!user) return {error:{status:401,message:'No session'}};
+        server.artwork.set(args.key, {match: args.match_data, fetched_at: new Date().toISOString()});
+        return {data:null,error:null};
+      }
+      const {expected_revision,document} = args;
       if (server.fail) return {error:offline()};
       if (!user) return {error:{status:401,message:'No session'}};
       const row=server.rows.get(user.id);
@@ -305,4 +320,36 @@ test('removed provider hosts are not offered or fetched as default integrations'
   const images=[...w.document.querySelectorAll('img[src]')].map(node=>node.getAttribute('src'));
   assert.ok(images.every(url=>!/(googleusercontent|googleapis|gstatic)/i.test(url)));
   assert.equal(run(w,'archiveApp.archive.collections[0].films[0].posterUrl'),'https://images.googleusercontent.com/old.png','legacy URL remains in backups');
+});
+
+test('poster lookups for the same title/year are shared across accounts via the Supabase cache', async t => {
+  const server = backend();
+  const app = openApp(server); t.after(app.close); const w = app.window; await ready(w);
+  await signIn(w, 'poster-one@example.test');
+  run(w, `
+    archiveApp.archive.settings.provider = 'wikipedia';
+    archiveApp.archive.collections.push({id:'poster-list',name:'Posters',createdAt:new Date().toISOString(),sourceName:'',
+      films:[LedgerCore.makeFilm('Shared Poster Film',{id:'film-a',yearLabel:'1999'})]});
+    archiveApp.archive.activeId='poster-list'; renderArchive(false);
+    window.__artworkSearchCalls = 0;
+    ArtworkLookup.search = async () => { window.__artworkSearchCalls += 1; return [{posterUrl:'https://example.org/shared.jpg',sourceUrl:'https://en.wikipedia.org/wiki/Shared',source:'Wikipedia',overview:'An example.',title:'Shared Poster Film',year:1999,portrait:true}]; };
+    queueArtwork('film-a', true, 0);
+  `);
+  await until(() => run(w, "archiveApp.artwork.get('wikipedia:film-a')?.match?.posterUrl") === 'https://example.org/shared.jpg', 'first lookup resolved');
+  assert.equal(run(w, 'window.__artworkSearchCalls'), 1);
+  assert.equal(server.artwork.size, 1, 'the lookup was written to the shared cache');
+
+  await signOut(w);
+  await signIn(w, 'poster-two@example.test');
+  run(w, `
+    archiveApp.archive.settings.provider = 'wikipedia';
+    archiveApp.archive.collections.push({id:'poster-list-2',name:'Posters',createdAt:new Date().toISOString(),sourceName:'',
+      films:[LedgerCore.makeFilm('Shared Poster Film',{id:'film-b',yearLabel:'1999'})]});
+    archiveApp.archive.activeId='poster-list-2'; renderArchive(false);
+    window.__artworkSearchCalls = 0;
+    ArtworkLookup.search = async () => { window.__artworkSearchCalls += 1; return []; };
+    queueArtwork('film-b', true, 0);
+  `);
+  await until(() => run(w, "archiveApp.artwork.get('wikipedia:film-b')?.match?.posterUrl") === 'https://example.org/shared.jpg', 'second account reused the cached poster');
+  assert.equal(run(w, 'window.__artworkSearchCalls'), 0, 'a second account with the same title/year never calls the provider');
 });

@@ -2205,17 +2205,40 @@ function runSchedulerJob(job) {
   const controller = new AbortController();
   archiveApp.schedulerActive.set(job.key,{tier:job.tier,controller});
   const startedAt = Date.now();
-  void ArtworkLookup.search(job.film,job.provider,false,controller.signal).then(candidates=>{
-    if (job.generation !== archiveApp.artworkGeneration) return;
-    archiveApp.schedulerLatencies.push(Date.now()-startedAt);
-    if (archiveApp.schedulerLatencies.length > 20) archiveApp.schedulerLatencies.shift();
-    archiveApp.schedulerErrorStreak = 0;
-    if (archiveApp.schedulerConcurrency < 6) archiveApp.schedulerConcurrency += 0.2;
+  // The shared cache is keyed by title+year+provider (LedgerCore.identity), not by film.id:
+  // two different archives' films with the same title/year share one lookup.
+  const sharedKey = ['wikipedia','tmdb'].includes(job.provider) ? `${job.provider}:${LedgerCore.identity(job.film.title,job.film.yearLabel)}` : null;
+  const ARTWORK_CACHE_TTL = 30 * 86400000;
+  void (async () => {
+    if (sharedKey) {
+      const shared = await window.NightreelArtworkCache?.lookup(sharedKey)?.catch(() => null);
+      if (shared && Date.now() - shared.fetchedAt < ARTWORK_CACHE_TTL) return {fromCache: true, match: shared.match};
+    }
+    const candidates = await ArtworkLookup.search(job.film,job.provider,false,controller.signal);
+    // A cache hit is already keyed by this exact title+year identity, so it is not re-ranked
+    // here: the stripped cache shape (see the store() call below) has no title/year for
+    // rankArtwork to compare against, and ranking a confirmed match would be redundant anyway.
     const match = candidates[0] && LedgerCore.rankArtwork(job.film,candidates[0]) >= 95 ? candidates[0] : null;
+    return {fromCache: false, match};
+  })().then(({fromCache, match})=>{
+    if (job.generation !== archiveApp.artworkGeneration) return;
+    if (!fromCache) {
+      archiveApp.schedulerLatencies.push(Date.now()-startedAt);
+      if (archiveApp.schedulerLatencies.length > 20) archiveApp.schedulerLatencies.shift();
+      archiveApp.schedulerErrorStreak = 0;
+      if (archiveApp.schedulerConcurrency < 6) archiveApp.schedulerConcurrency += 0.2;
+    }
     const record = {key:job.key,filmId:job.id,match,fetchedAt:Date.now()};
     archiveApp.artwork.set(job.key,record);
     archiveApp.posterStatus.set(job.id,{status:match ? 'ready' : 'none'});
     void ArchiveStorage.saveArtwork(record);
+    if (sharedKey && !fromCache) {
+      // Strip to the shape the Supabase validity check accepts (and that a cache reader
+      // needs to paint a poster): provider-specific fields like TMDB's externalId or
+      // Wikipedia's wikidataId never leave this browser.
+      const shared = match ? {posterUrl: match.posterUrl, sourceUrl: match.sourceUrl, source: match.source, overview: String(match.overview || '').slice(0, 2000)} : null;
+      void window.NightreelArtworkCache?.store(sharedKey, job.provider, shared);
+    }
   }).catch(error=>{
     if (job.generation !== archiveApp.artworkGeneration) return;
     if (error?.preempted) {

@@ -42,6 +42,14 @@
     timer: null, polling: null, inFlight: null, retryCount: 0, error: '', status: 'Opening account…',
     recovery: false, busy: false, guestStarted: false, releaseLock: null, redirectError, authVerifiedAt: 0
   };
+  // online/focus/visibilitychange can all fire within the same tick (e.g. switching back to a
+  // tab that just regained connectivity). synchronize() already serializes on state.inFlight,
+  // so this just gives every trigger the same entry point and reset-retry behavior the old
+  // per-listener closures had, without adding a second, redundant throttle on top of it.
+  function requestResync() {
+    state.retryCount = 0;
+    void synchronize();
+  }
   const epoch = () => state.generation;
   const current = (generation, userId) => generation === state.generation && state.user?.id === userId && !state.transitioning;
   const clone = value => structuredClone(value);
@@ -179,6 +187,10 @@
         <p id="nr-config-message" class="form-status is-error" hidden>Cloud sync needs an HTTPS or localhost page and a public Supabase key. Follow the repository README; guest mode remains available.</p>
         <div id="nr-signed-out">
           <p class="quiet">Use any email address you can access and a password. Sign in on each device. Guest data stays separate until you import it.</p>
+          <details id="nr-data-disclosure">
+            <summary class="text-button" style="display:inline-block;cursor:pointer">What data goes to the cloud?</summary>
+            <p class="quiet">Creating an account sends your email address to Supabase's authentication service, which stores it along with a hashed password. Once signed in, this app syncs one JSON document containing your collections, films (titles, years, genres, watched status, ratings, notes, favorites), viewing paths, saved views, profiles, feedback, poster image URLs you've chosen, and display/source preferences. Shared poster artwork (image URLs and captions looked up from Wikipedia or TMDB) is cached in a separate, non-personal table so it can be reused across devices and accounts without re-querying those services. No API tokens, passwords, or AI provider keys ever leave this browser. See the README's "Sync and security" section for the full field list.</p>
+          </details>
           <div id="nr-email-actions">
             <label class="field-label">Email<input type="email" id="nr-email" class="text-field" autocomplete="email"></label>
             <label class="field-label">Password<input type="password" id="nr-password" class="text-field" autocomplete="current-password"></label>
@@ -512,6 +524,28 @@
     openDialog() { buildDialog(); renderDialog(); if (!get('nr-auth-dialog').open) get('nr-auth-dialog').showModal(); }
   };
 
+  // Shared read-through poster cache: once any signed-in user has looked up a title's artwork,
+  // every signed-in user reuses that result instead of re-querying Wikipedia/TMDB, which is
+  // what actually avoids their per-IP rate limits (an IndexedDB-only cache does not, since a
+  // new device/browser has an empty cache). Guest (signed-out) users have no row to read or
+  // write under RLS, so this is a no-op for them and they keep querying the providers directly.
+  window.NightreelArtworkCache = {
+    async lookup(identityKey) {
+      if (!client || !state.user) return null;
+      try {
+        const response = await client.from('nightreel_artwork_cache').select('match,fetched_at').eq('identity_key', identityKey).maybeSingle();
+        if (response.error || !response.data) return null;
+        const fetchedAt = Date.parse(response.data.fetched_at || '');
+        return {match: response.data.match || null, fetchedAt: Number.isFinite(fetchedAt) ? fetchedAt : Date.now()};
+      } catch { return null; }
+    },
+    async store(identityKey, provider, match) {
+      if (!client || !state.user) return;
+      try { await client.rpc('nightreel_upsert_artwork', {key: identityKey, provider_name: provider, match_data: match || null}); }
+      catch { /* The shared cache is an optimization; a local miss still falls back to the provider. */ }
+    }
+  };
+
   showLoading(true);
   if (client) {
     client.auth.onAuthStateChange((event, session) => {
@@ -526,8 +560,10 @@
     beginTransition(null);
     void finishTransition(null, epoch());
   }
-  state.polling = setInterval(() => { if (document.visibilityState === 'visible' && state.retryCount <= 5) void synchronize(); }, 20000);
-  window.addEventListener('online', () => { state.retryCount = 0; void synchronize(); });
-  window.addEventListener('focus', () => { state.retryCount = 0; void synchronize(); });
-  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { state.retryCount = 0; void synchronize(); } });
+  // The periodic poll only runs while the tab is visible; a backgrounded tab makes no
+  // Supabase requests at all until it regains focus or the page comes back online.
+  state.polling = setInterval(() => { if (document.visibilityState === 'visible' && state.retryCount <= 5) requestResync(); }, 20000);
+  window.addEventListener('online', requestResync);
+  window.addEventListener('focus', requestResync);
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') requestResync(); });
 })();

@@ -55,3 +55,38 @@ test('database enforces account isolation, ownership, integrity and atomic revis
   await expectCode(()=>db.query('select * from public.nightreel_archives'),'42501');
   await expectCode(()=>db.query('select * from public.nightreel_commit_archive($1,$2::jsonb)',[0,JSON.stringify(archive)]),'42501');
 });
+
+test('shared artwork cache is readable by any signed-in user, writable only through validation, and self-throttling', async t => {
+  const db=new PGlite(); t.after(()=>db.close());
+  await db.exec(`create role anon; create role authenticated; create schema auth;
+    create table auth.users(id uuid primary key);
+    create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub', true),'')::uuid $$;
+    grant usage on schema auth to anon, authenticated;`);
+  await db.exec(fs.readFileSync('supabase/migrations/20261119000100_archive.sql','utf8'));
+  await db.exec(fs.readFileSync('supabase/migrations/20261120000100_artwork_cache.sql','utf8'));
+  await db.query('insert into auth.users(id) values ($1),($2)',[alice,bob]);
+  await db.exec('set role authenticated');
+  await db.query("select set_config('request.jwt.claim.sub',$1,false)",[alice]);
+  const goodMatch = {posterUrl:'https://example.org/poster.jpg', sourceUrl:'https://en.wikipedia.org/wiki/Example', source:'Wikipedia', overview:'A film.'};
+  await db.query('select public.nightreel_upsert_artwork($1,$2,$3::jsonb)',['wikipedia::example::2020','wikipedia',JSON.stringify(goodMatch)]);
+  let result=await db.query('select match from public.nightreel_artwork_cache where identity_key=$1',['wikipedia::example::2020']);
+  assert.deepEqual(result.rows[0].match,goodMatch);
+  // Bob (a different authenticated user) can read the same shared entry; it is not per-user data.
+  await db.query("select set_config('request.jwt.claim.sub',$1,false)",[bob]);
+  result=await db.query('select match from public.nightreel_artwork_cache where identity_key=$1',['wikipedia::example::2020']);
+  assert.deepEqual(result.rows[0].match,goodMatch);
+  // A fresh entry is not clobbered by a second user's write within the throttle window.
+  const otherMatch = {posterUrl:'https://example.org/other.jpg', source:'Wikipedia'};
+  await db.query('select public.nightreel_upsert_artwork($1,$2,$3::jsonb)',['wikipedia::example::2020','wikipedia',JSON.stringify(otherMatch)]);
+  result=await db.query('select match from public.nightreel_artwork_cache where identity_key=$1',['wikipedia::example::2020']);
+  assert.deepEqual(result.rows[0].match,goodMatch,'a recent entry is not overwritten before its refresh window');
+  // A malformed payload (non-https poster, oversized text) is rejected regardless of who writes it.
+  await expectCode(()=>db.query('select public.nightreel_upsert_artwork($1,$2,$3::jsonb)',['wikipedia::bad::2020','wikipedia',JSON.stringify({posterUrl:'http://example.org/x.jpg'})]),'22023');
+  await expectCode(()=>db.query('select public.nightreel_upsert_artwork($1,$2,$3::jsonb)',['wikipedia::bad::2020','not-a-provider',JSON.stringify(null)]),'22023');
+  await expectCode(()=>db.query('insert into public.nightreel_artwork_cache(identity_key,provider) values ($1,$2)',['direct-insert','wikipedia']),'42501');
+  await expectCode(()=>db.query('delete from public.nightreel_artwork_cache'),'42501');
+  await db.query("select set_config('request.jwt.claim.sub','',false)");
+  await expectCode(()=>db.query('select public.nightreel_upsert_artwork($1,$2,$3::jsonb)',['wikipedia::example::2020','wikipedia',JSON.stringify(goodMatch)]),'42501');
+  await db.exec('reset role; set role anon');
+  await expectCode(()=>db.query('select * from public.nightreel_artwork_cache'),'42501');
+});
